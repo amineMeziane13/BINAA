@@ -1,12 +1,8 @@
 import axios from 'axios';
-
-// Phone physique: remplace par l'IP locale de ton PC (ex: 192.168.1.42)
-// Émulateur Android: garde 10.0.2.2
-// iOS Simulator: garde localhost
-const API_HOST = '192.168.1.11';
+import { API_BASE_URL } from './config';
 
 const api = axios.create({
-  baseURL: `http://${API_HOST}:3000/api`,
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
