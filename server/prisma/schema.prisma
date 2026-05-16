@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CLIENT
+  FOURNISSEUR
+  ARTISAN
+  ADMIN
+}
+
+enum ProviderType {
+  FOURNISSEUR
+  ARTISAN
+}
+
+enum ProductType {
+  MATERIAL
+  EQUIPMENT
+}
+
+enum OrderStatus {
+  PENDING_ASSIGNMENT
+  PENDING_PAYMENT
+  PAID
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  PRODUCT
+  ARTISAN_SERVICE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  fullName  String
+  phone     String
+  commune   String
+
+  provider Provider?
+  orders   Commande[] @relation("clientOrders")
+  reviews  Review[]   @relation("reviewer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Provider {
+  id                String       @id @default(uuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              ProviderType
+  profession        String?
+  experienceYears   Int?
+  isSubscribed      Boolean      @default(false)
+  subscriptionExpiry DateTime?
+  rating            Float        @default(0)
+
+  products    Product[]
+  assignments Commande[]
+  reviews     Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id            String      @id @default(uuid())
+  providerId    String
+  provider      Provider    @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  title         String
+  description   String
+  price         Float
+  stockQuantity Int
+  type          ProductType
+  rating        Float       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Commande {
+  id                String      @id @default(uuid())
+  clientId          String
+  client            User        @relation("clientOrders", fields: [clientId], references: [id], onDelete: Cascade)
+  assignedProviderId String?
+  assignedProvider  Provider?   @relation(fields: [assignedProviderId], references: [id])
+  type              OrderType
+  status            OrderStatus @default(PENDING_ASSIGNMENT)
+  baseAmount        Float
+  commissionRate    Float       @default(0.1)
+  totalAmount       Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlatformSetting {
+  key   String @id
+  value String
+}
+
+model Review {
+  id               String   @id @default(uuid())
+  clientId         String
+  client           User     @relation("reviewer", fields: [clientId], references: [id], onDelete: Cascade)
+  targetProviderId String
+  targetProvider   Provider @relation(fields: [targetProviderId], references: [id], onDelete: Cascade)
+  score            Int
+  comment          String?
+  createdAt        DateTime @default(now())
+
+  @@unique([clientId, targetProviderId])
+}

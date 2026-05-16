@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.expo/
+dist/
+web-build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Build
+*.apk
+*.aab
+*.ipa
+*.tgz
