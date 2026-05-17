@@ -3,6 +3,6 @@
   "private": true,
   "scripts": {
     "build": "cd server && npm install --include=dev && npm run build",
-    "start": "cd server && npx prisma migrate deploy && npm start"
+    "start": "cd server && npx prisma db push --accept-data-loss && npm start"
   }
 }
