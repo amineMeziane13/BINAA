@@ -13,6 +13,6 @@
       "package": "com.binaa.app",
       "useNextNotificationsApi": true
     },
-    "platforms": ["ios", "android"]
+    "platforms": ["ios", "android", "web"]
   }
 }
