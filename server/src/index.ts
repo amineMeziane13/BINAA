@@ -29,6 +29,6 @@ app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 
-app.listen(env.PORT, () => {
+app.listen(env.PORT, '0.0.0.0', () => {
   logger.info('Server', `Listening on port ${env.PORT}`);
 });

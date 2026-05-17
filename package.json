@@ -2,7 +2,7 @@
   "name": "binaa",
   "private": true,
   "scripts": {
-    "build": "cd server && npm install && npm run build",
-    "start": "cd server && npm start"
+    "build": "cd server && npm install --include=dev && npm run build",
+    "start": "cd server && npx prisma migrate deploy && npm start"
   }
 }
