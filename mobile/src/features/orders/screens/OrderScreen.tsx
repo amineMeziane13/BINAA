@@ -7,6 +7,7 @@ import { typography } from '../../../core/theme/typography';
 import { card3D, modal3D, button3D } from '../../../core/theme/neumorphism';
 import Icon3D from '../../../core/components/Icon3D';
 import { useAuth } from '../../../core/hooks/useAuth';
+import ProjectVisualizer3D from '../components/ProjectVisualizer3D';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING_ASSIGNMENT: 'En attente d\'affectation',
@@ -136,133 +137,13 @@ export default function OrderScreen() {
 
       {/* Order Details Modal */}
       {selected && (
-        <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => setSelected(null)}>
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, modal3D()]}>
-              <View style={styles.modalHeader}>
-                <Icon3D icon="📋" size={22} bgColor={colors.primary} />
-                <Text style={styles.modalTitle}>Détails de la commande</Text>
-                <TouchableOpacity onPress={() => setSelected(null)}>
-                  <Text style={styles.closeBtn}>✕</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={[styles.detailCard, { borderLeftColor: STATUS_COLORS[selected.status] || '#94A3B8' }]}>
-                  <Text style={styles.detailLabel}>Commande</Text>
-                  <Text style={styles.detailValue}>#{selected.id.slice(0, 12)}</Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <View style={styles.detailHalf}>
-                    <Text style={styles.detailLabel}>Type</Text>
-                    <Text style={styles.detailValue}>{TYPE_LABELS[selected.type] || selected.type}</Text>
-                  </View>
-                  <View style={styles.detailHalf}>
-                    <Text style={styles.detailLabel}>Statut</Text>
-                    <View style={[styles.statusBadgeLg, { backgroundColor: (STATUS_COLORS[selected.status]) + '20' }]}>
-                      <Text style={[styles.statusTextLg, { color: STATUS_COLORS[selected.status] }]}>
-                        {STATUS_LABELS[selected.status]}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.amountSection}>
-                  <View style={styles.amountRow}>
-                    <Text style={styles.amountLabel}>Montant de base</Text>
-                    <Text style={styles.amountValue}>{selected.baseAmount?.toLocaleString()} DZD</Text>
-                  </View>
-                  <View style={styles.amountRow}>
-                    <Text style={styles.amountLabel}>Commission ({(selected.commissionRateApplied || 0)}%)</Text>
-                    <Text style={styles.amountValue}>{selected.commissionAmount?.toLocaleString()} DZD</Text>
-                  </View>
-                  <View style={[styles.amountRow, styles.totalRow]}>
-                    <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalValue}>{selected.totalAmount?.toLocaleString()} DZD</Text>
-                  </View>
-                </View>
-
-                {selected.client && (
-                  <View style={styles.personCard}>
-                    <Icon3D icon="👤" size={16} bgColor="#22C55E" />
-                    <View style={{ marginLeft: 12 }}>
-                      <Text style={styles.personLabel}>Client</Text>
-                      <Text style={styles.personName}>{selected.client.fullName}</Text>
-                      {selected.client.commune && <Text style={styles.personSub}>{selected.client.commune}</Text>}
-                    </View>
-                  </View>
-                )}
-
-                {selected.assignedProvider && (
-                  <View style={styles.personCard}>
-                    <Icon3D icon="🔧" size={16} bgColor="#2563EB" />
-                    <View style={{ marginLeft: 12 }}>
-                      <Text style={styles.personLabel}>Prestataire assigné</Text>
-                      <Text style={styles.personName}>{selected.assignedProvider.fullName}</Text>
-                    </View>
-                  </View>
-                )}
-
-                {selected.offer && (
-                  <View style={styles.personCard}>
-                    <Icon3D icon="📦" size={16} bgColor="#7C3AED" />
-                    <View style={{ marginLeft: 12 }}>
-                      <Text style={styles.personLabel}>Offre</Text>
-                      <Text style={styles.personName}>{selected.offer.title}</Text>
-                      <Text style={styles.personSub}>{selected.offer.price?.toLocaleString()} DZD - {selected.offer.type}</Text>
-                    </View>
-                  </View>
-                )}
-
-                <Text style={styles.dateText}>
-                  Créé le: {new Date(selected.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </Text>
-
-                {/* Actions */}
-                <View style={styles.actions}>
-                  {user?.role === 'CLIENT' && selected.status === 'PENDING_PAYMENT' && (
-                    <TouchableOpacity onPress={() => handlePayOrder(selected.id)}>
-                      <View style={[styles.actionBtn, button3D('#22C55E')]}>
-                        <Text style={styles.actionBtnText}>💳 Payer maintenant</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  
-                  {(user?.role === 'ARTISAN' || user?.role === 'FOURNISSEUR') && selected.status === 'PAID' && (
-                    <TouchableOpacity onPress={() => handleCompleteOrder(selected.id)}>
-                      <View style={[styles.actionBtn, button3D('#059669')]}>
-                        <Text style={styles.actionBtnText}>✅ Marquer comme terminé</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-
-                  {selected.status !== 'COMPLETED' && selected.status !== 'CANCELLED' && (
-                    <TouchableOpacity onPress={() => handleCancelOrder(selected.id)}>
-                      <View style={styles.cancelBtn}>
-                        <Text style={styles.cancelBtnText}>Annuler la commande</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Rating for completed orders */}
-                  {user?.role === 'CLIENT' && selected.status === 'COMPLETED' && selected.assignedProvider && (
-                    <View style={styles.ratingSection}>
-                      <Text style={styles.ratingTitle}>Évaluer le prestataire</Text>
-                      <View style={styles.stars}>
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                            <Text style={[styles.star, rating >= star && styles.starActive]}>{rating >= star ? '★' : '☆'}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
+        <ProjectVisualizer3D 
+          visible={!!selected} 
+          project={selected} 
+          onClose={() => setSelected(null)} 
+          onPay={handlePayOrder}
+          onComplete={handleCompleteOrder}
+        />
       )}
     </View>
   );

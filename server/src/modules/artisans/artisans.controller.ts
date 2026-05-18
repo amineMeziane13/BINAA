@@ -37,8 +37,14 @@ export async function getMyProfile(req: Request, res: Response, next: NextFuncti
 
 export async function updateProfile(req: Request, res: Response, next: NextFunction) {
   try {
-    const profile = await service.updateProfile(req.user!.userId, req.body);
-    res.json(profile);
+    let profile = await prisma.provider.findUnique({ where: { userId: req.user!.userId } });
+    if (!profile) {
+      profile = await prisma.provider.create({
+        data: { userId: req.user!.userId, type: req.user!.role as any, profession: '', experienceYears: 0 }
+      });
+    }
+    const updated = await service.updateProfile(req.user!.userId, req.body);
+    res.json(updated);
   } catch (err) {
     next(err);
   }
