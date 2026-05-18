@@ -89,3 +89,16 @@ export async function login(email: string, password: string) {
     user: { id: user.id, email: user.email, role: user.role, fullName: user.fullName },
   };
 }
+
+export async function deleteAccount(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  await prisma.user.delete({
+    where: { id: userId }
+  });
+
+  logger.info('Auth', 'User account deleted', { userId });
+}

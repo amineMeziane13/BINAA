@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { prisma } from '../../config/db.js';
 import * as service from './artisans.service.js';
 
 export async function list(req: Request, res: Response, next: NextFunction) {
@@ -21,8 +22,14 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function getMyProfile(req: Request, res: Response, next: NextFunction) {
   try {
-    const profile = await service.getProviderByUserId(req.user!.userId);
-    res.json(profile);
+    let profile = await prisma.provider.findUnique({ where: { userId: req.user!.userId } });
+    if (!profile) {
+      profile = await prisma.provider.create({
+        data: { userId: req.user!.userId, type: req.user!.role as any, profession: '', experienceYears: 0 }
+      });
+    }
+    const fullProfile = await service.getProviderByUserId(req.user!.userId);
+    res.json(fullProfile);
   } catch (err) {
     next(err);
   }

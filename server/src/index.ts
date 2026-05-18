@@ -14,7 +14,8 @@ import adminRoutes from './modules/admin/admin.routes.js';
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.get('/', (_req, res) => {
   res.json({ app: 'Binaa API', version: '2.0.0', status: 'running' });

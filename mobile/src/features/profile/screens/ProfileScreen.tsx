@@ -46,7 +46,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             setDeleting(true);
             try {
-              await api.delete('/users/me');
+              await api.delete('/auth/me');
               logout();
             } catch (err: any) {
               Alert.alert('Erreur', err?.response?.data?.error || 'Erreur de suppression');

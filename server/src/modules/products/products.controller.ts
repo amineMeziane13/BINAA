@@ -33,8 +33,16 @@ export async function getMyProducts(req: Request, res: Response, next: NextFunct
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const provider = await prisma.provider.findUnique({ where: { userId: req.user!.userId } });
-    if (!provider) throw new AppError(403, 'Only providers can create products');
+    let provider = await prisma.provider.findUnique({ where: { userId: req.user!.userId } });
+    if (!provider) {
+      if (req.user!.role !== 'CLIENT' && req.user!.role !== 'ADMIN') {
+        provider = await prisma.provider.create({
+          data: { userId: req.user!.userId, type: req.user!.role as any, profession: '', experienceYears: 0 }
+        });
+      } else {
+        throw new AppError(403, 'Only providers can create products');
+      }
+    }
     const product = await service.createProviderProduct(provider.id, req.body);
     res.status(201).json(product);
   } catch (err) {

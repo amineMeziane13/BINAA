@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, ScrollView, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import api from '../../../core/api/axios';
 import { colors } from '../../../core/theme/colors';
 import { typography } from '../../../core/theme/typography';
@@ -44,7 +45,11 @@ export default function OrderScreen() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadOrders(); }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadOrders();
+    }, [])
+  );
 
   const handlePayOrder = async (orderId: string) => {
     try {
@@ -117,7 +122,7 @@ export default function OrderScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Icon3D icon="📋" size={22} bgColor={colors.primary} />
-        <Text style={styles.title}>Commandes</Text>
+        <Text style={styles.title}>{user?.role === 'CLIENT' ? 'Mes Projets' : 'Commandes'}</Text>
       </View>
       <FlatList
         data={orders}

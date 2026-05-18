@@ -20,3 +20,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+export async function deleteAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    await service.deleteAccount(req.user!.userId);
+    res.json({ success: true, message: 'Account deleted' });
+  } catch (err) {
+    next(err);
+  }
+}
