@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, Modal, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { colors } from '../../../core/theme/colors';
 import { typography } from '../../../core/theme/typography';
 import { button3D, modal3D } from '../../../core/theme/neumorphism';
@@ -14,41 +14,47 @@ interface Props {
 }
 
 const PROJECT_TYPES = [
-  { label: 'Prestation Artisan', value: 'ARTISAN_REQUEST', icon: '👷', desc: 'Plombier, électricien, maçon...' },
-  { label: 'Achat Matériel', value: 'MATERIAL_REQUEST', icon: '🧱', desc: 'Ciment, brique, peinture...' },
-  { label: 'Location Équipement', value: 'EQUIPMENT_REQUEST', icon: '🔧', desc: 'Grue, bétonnière, échafaudage...' },
+  { label: 'Prestation Artisan', value: 'ARTISAN_REQUEST', icon: '👷', desc: 'Plombier, électricien, maçon...', color: '#2563EB' },
+  { label: 'Achat Matériel', value: 'MATERIAL_REQUEST', icon: '🧱', desc: 'Ciment, brique, peinture...', color: '#DC2626' },
+  { label: 'Location Équipement', value: 'EQUIPMENT_REQUEST', icon: '🔧', desc: 'Grue, bétonnière, échafaudage...', color: '#7C3AED' },
 ];
 
 const SKILLS = [
-  'Plombier', 'Électricien', 'Maçon', 'Peintre', 'Menuisier',
-  'Carreleur', 'Soudeur', 'Climaticien', 'Serrurier', 'Vitrier',
-];
-
-const COMMUNES = [
-  'Oran', 'Es-Sénia', 'Bir El Djir', 'Aïn El Turk', 'Arzew',
-  'Bethioua', 'Gdyel', 'Oued Tlelat', 'Boutlélis', 'Misserghin',
-  'Canastel', 'El Ançor', 'Hassi Bounif', 'Sidi Chahmi', 'Mers El Kébir',
+  { label: 'Plombier', icon: '🔧' },
+  { label: 'Électricien', icon: '⚡' },
+  { label: 'Maçon', icon: '🧱' },
+  { label: 'Peintre', icon: '🎨' },
+  { label: 'Menuisier', icon: '🪚' },
+  { label: 'Carreleur', icon: '🔲' },
+  { label: 'Soudeur', icon: '🔥' },
+  { label: 'Climaticien', icon: '❄️' },
+  { label: 'Serrurier', icon: '🔑' },
+  { label: 'Vitrier', icon: '🪟' },
 ];
 
 export default function CreateProjectModal({ visible, onClose, onSuccess }: Props) {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
-  const [type, setType] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [budget, setBudget] = useState('');
   const [skill, setSkill] = useState('');
   const [description, setDescription] = useState('');
-  const [commune, setCommune] = useState(user?.commune || '');
   const [loading, setLoading] = useState(false);
 
-  const totalSteps = type === 'ARTISAN_REQUEST' ? 4 : 3;
+  const needsSkillStep = selectedTypes.includes('ARTISAN_REQUEST');
+  const totalSteps = needsSkillStep ? 4 : 3;
+
+  const toggleType = (value: string) => {
+    setSelectedTypes(prev =>
+      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+    );
+  };
 
   const canProceed = () => {
-    if (step === 1) return !!type;
-    if (step === 2 && type === 'ARTISAN_REQUEST') return !!skill;
-    if (step === 2 && type !== 'ARTISAN_REQUEST') return !!budget;
-    if (step === 3 && type === 'ARTISAN_REQUEST') return !!budget;
-    if (step === 3 && type !== 'ARTISAN_REQUEST') return true;
-    if (step === 4) return true;
+    if (step === 1) return selectedTypes.length > 0;
+    if (step === 2 && needsSkillStep) return !!skill;
+    if (step === 2 && !needsSkillStep) return !!budget;
+    if (step === 3 && needsSkillStep) return !!budget;
     return true;
   };
 
@@ -60,16 +66,25 @@ export default function CreateProjectModal({ visible, onClose, onSuccess }: Prop
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await api.post('/commandes', {
-        type,
-        baseAmount: parseFloat(budget) || 0,
-        skills: type === 'ARTISAN_REQUEST' ? [skill] : [],
+      // Create orders for each selected type
+      const promises = selectedTypes.map(type => {
+        const orderType = type === 'ARTISAN_REQUEST' ? 'ARTISAN_SERVICE' : 'PRODUCT';
+        const requestedProfession = type === 'ARTISAN_REQUEST' ? skill : undefined;
+        const requestedProductType = type === 'MATERIAL_REQUEST' ? 'MATERIAL' :
+                                     type === 'EQUIPMENT_REQUEST' ? 'EQUIPMENT' : undefined;
+
+        return api.post('/commandes', {
+          type: orderType,
+          baseAmount: parseFloat(budget) || 0,
+          description: description || undefined,
+          requestedProfession,
+          requestedProductType,
+          requestedServices: selectedTypes,
+        });
       });
-      setStep(1);
-      setType('');
-      setBudget('');
-      setSkill('');
-      setDescription('');
+
+      await Promise.all(promises);
+      resetForm();
       onSuccess();
     } catch (err: any) {
       Alert.alert('Erreur', err?.response?.data?.error || 'Erreur lors de la création du projet');
@@ -78,12 +93,16 @@ export default function CreateProjectModal({ visible, onClose, onSuccess }: Prop
     }
   };
 
-  const handleClose = () => {
+  const resetForm = () => {
     setStep(1);
-    setType('');
+    setSelectedTypes([]);
     setBudget('');
     setSkill('');
     setDescription('');
+  };
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
 
@@ -109,30 +128,54 @@ export default function CreateProjectModal({ visible, onClose, onSuccess }: Prop
           </View>
 
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-            {/* Step 1: Choose type */}
+            {/* Step 1: Choose types (multi-select) */}
             {step === 1 && (
               <>
                 <Text style={styles.label}>De quoi avez-vous besoin ?</Text>
-                {PROJECT_TYPES.map(pt => (
-                  <TouchableOpacity key={pt.value} onPress={() => setType(pt.value)} style={[styles.option, type === pt.value && styles.optionSelected]}>
-                    <Icon3D icon={pt.icon} size={18} bgColor={type === pt.value ? colors.primary : colors.surfaceDark} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={[styles.optionTitle, type === pt.value && styles.optionTitleSelected]}>{pt.label}</Text>
-                      <Text style={styles.optionDesc}>{pt.desc}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                <Text style={styles.hint}>💡 Vous pouvez sélectionner plusieurs options</Text>
+                {PROJECT_TYPES.map(pt => {
+                  const isSelected = selectedTypes.includes(pt.value);
+                  return (
+                    <TouchableOpacity
+                      key={pt.value}
+                      onPress={() => toggleType(pt.value)}
+                      style={[styles.option, isSelected && { borderColor: pt.color, backgroundColor: pt.color + '08' }]}
+                    >
+                      <View style={[styles.optionCheck, isSelected && { backgroundColor: pt.color, borderColor: pt.color }]}>
+                        {isSelected && <Text style={styles.optionCheckMark}>✓</Text>}
+                      </View>
+                      <Icon3D icon={pt.icon} size={18} bgColor={isSelected ? pt.color : colors.surfaceDark} />
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={[styles.optionTitle, isSelected && { color: pt.color }]}>{pt.label}</Text>
+                        <Text style={styles.optionDesc}>{pt.desc}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+                {selectedTypes.length > 1 && (
+                  <View style={styles.multiSelectInfo}>
+                    <Text style={styles.multiSelectIcon}>🎯</Text>
+                    <Text style={styles.multiSelectText}>
+                      {selectedTypes.length} services sélectionnés - Un projet sera créé pour chaque type
+                    </Text>
+                  </View>
+                )}
               </>
             )}
 
             {/* Step 2 for ARTISAN: Choose skill */}
-            {step === 2 && type === 'ARTISAN_REQUEST' && (
+            {step === 2 && needsSkillStep && (
               <>
                 <Text style={styles.label}>Quel métier recherchez-vous ?</Text>
                 <View style={styles.chipContainer}>
                   {SKILLS.map(s => (
-                    <TouchableOpacity key={s} onPress={() => setSkill(s)} style={[styles.chip, skill === s && styles.chipSelected]}>
-                      <Text style={[styles.chipText, skill === s && styles.chipTextSelected]}>{s}</Text>
+                    <TouchableOpacity
+                      key={s.label}
+                      onPress={() => setSkill(s.label)}
+                      style={[styles.chip, skill === s.label && styles.chipSelected]}
+                    >
+                      <Text style={styles.chipIcon}>{s.icon}</Text>
+                      <Text style={[styles.chipText, skill === s.label && styles.chipTextSelected]}>{s.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -140,7 +183,7 @@ export default function CreateProjectModal({ visible, onClose, onSuccess }: Prop
             )}
 
             {/* Budget step */}
-            {((step === 2 && type !== 'ARTISAN_REQUEST') || (step === 3 && type === 'ARTISAN_REQUEST')) && (
+            {((step === 2 && !needsSkillStep) || (step === 3 && needsSkillStep)) && (
               <>
                 <Text style={styles.label}>Quel est votre budget ? (DZD)</Text>
                 <TextInput
@@ -164,18 +207,27 @@ export default function CreateProjectModal({ visible, onClose, onSuccess }: Prop
             )}
 
             {/* Confirmation step */}
-            {((step === 3 && type !== 'ARTISAN_REQUEST') || (step === 4 && type === 'ARTISAN_REQUEST')) && (
+            {((step === 3 && !needsSkillStep) || (step === 4 && needsSkillStep)) && (
               <>
                 <Text style={styles.label}>📍 Localisation</Text>
-                <Text style={styles.communeDisplay}>{commune || user?.commune || 'Non définie'}</Text>
+                <Text style={styles.communeDisplay}>{user?.commune || 'Non définie'}</Text>
 
                 <Text style={styles.label}>Résumé du projet</Text>
                 <View style={styles.summary}>
                   <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Type :</Text>
-                    <Text style={styles.summaryValue}>{PROJECT_TYPES.find(p => p.value === type)?.label}</Text>
+                    <Text style={styles.summaryLabel}>Services :</Text>
+                    <View style={styles.summaryTypes}>
+                      {selectedTypes.map(t => {
+                        const pt = PROJECT_TYPES.find(p => p.value === t);
+                        return pt ? (
+                          <View key={t} style={[styles.summaryTypeBadge, { backgroundColor: pt.color + '15' }]}>
+                            <Text style={[styles.summaryTypeText, { color: pt.color }]}>{pt.icon} {pt.label}</Text>
+                          </View>
+                        ) : null;
+                      })}
+                    </View>
                   </View>
-                  {type === 'ARTISAN_REQUEST' && (
+                  {needsSkillStep && skill && (
                     <View style={styles.summaryRow}>
                       <Text style={styles.summaryLabel}>Métier :</Text>
                       <Text style={styles.summaryValue}>{skill}</Text>
@@ -183,12 +235,20 @@ export default function CreateProjectModal({ visible, onClose, onSuccess }: Prop
                   )}
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Budget :</Text>
-                    <Text style={styles.summaryValue}>{parseFloat(budget || '0').toLocaleString()} DZD</Text>
+                    <Text style={[styles.summaryValue, { color: colors.accent, fontWeight: '700' }]}>
+                      {parseFloat(budget || '0').toLocaleString()} DZD
+                    </Text>
                   </View>
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Commune :</Text>
-                    <Text style={styles.summaryValue}>{commune || user?.commune}</Text>
+                    <Text style={styles.summaryValue}>{user?.commune}</Text>
                   </View>
+                  {description ? (
+                    <View style={[styles.summaryRow, { flexDirection: 'column', gap: 4 }]}>
+                      <Text style={styles.summaryLabel}>Description :</Text>
+                      <Text style={styles.summaryValue}>{description}</Text>
+                    </View>
+                  ) : null}
                 </View>
                 <View style={styles.infoBox}>
                   <Icon3D icon="🤖" size={14} bgColor={colors.primary} />
@@ -208,15 +268,19 @@ export default function CreateProjectModal({ visible, onClose, onSuccess }: Prop
               </TouchableOpacity>
             )}
             <View style={{ flex: 1 }} />
-            <TouchableOpacity 
-              onPress={handleNext} 
+            <TouchableOpacity
+              onPress={handleNext}
               disabled={!canProceed() || loading}
               style={{ opacity: canProceed() ? 1 : 0.5 }}
             >
               <View style={[styles.submitBtn, button3D(step === totalSteps ? colors.accent : colors.primary)]}>
-                <Text style={styles.submitText}>
-                  {loading ? '...' : step === totalSteps ? '🚀 Lancer le projet' : 'Suivant →'}
-                </Text>
+                {loading ? (
+                  <ActivityIndicator color={colors.textLight} size="small" />
+                ) : (
+                  <Text style={styles.submitText}>
+                    {step === totalSteps ? '🚀 Lancer le projet' : 'Suivant →'}
+                  </Text>
+                )}
               </View>
             </TouchableOpacity>
           </View>
@@ -237,22 +301,46 @@ const styles = StyleSheet.create({
   progressFill: { height: 4, backgroundColor: colors.primary, borderRadius: 2 },
   body: { marginBottom: 16 },
   label: { ...typography.body, color: colors.text, fontWeight: '600', marginBottom: 10, marginTop: 16 },
-  option: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.surface, borderRadius: 14, marginBottom: 10, borderWidth: 2, borderColor: colors.surfaceDark },
-  optionSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight + '15' },
+  hint: { ...typography.caption, color: colors.primary, marginBottom: 12, fontStyle: 'italic' },
+  option: {
+    flexDirection: 'row', alignItems: 'center', padding: 16,
+    backgroundColor: colors.surface, borderRadius: 14, marginBottom: 10,
+    borderWidth: 2, borderColor: colors.surfaceDark,
+  },
+  optionCheck: {
+    width: 24, height: 24, borderRadius: 12,
+    borderWidth: 2, borderColor: colors.surfaceDark,
+    justifyContent: 'center', alignItems: 'center', marginRight: 10,
+  },
+  optionCheckMark: { color: '#fff', fontWeight: '700', fontSize: 14 },
   optionTitle: { ...typography.body, color: colors.text, fontWeight: '600' },
-  optionTitleSelected: { color: colors.primary },
   optionDesc: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  multiSelectInfo: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#2563EB10', padding: 12, borderRadius: 12, marginTop: 4,
+  },
+  multiSelectIcon: { fontSize: 16 },
+  multiSelectText: { ...typography.caption, color: '#2563EB', flex: 1, fontWeight: '500' },
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.surfaceDark },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: colors.surface, borderRadius: 20,
+    borderWidth: 1, borderColor: colors.surfaceDark,
+  },
   chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipIcon: { fontSize: 14 },
   chipText: { ...typography.bodySmall, color: colors.text },
   chipTextSelected: { color: colors.textLight, fontWeight: '700' },
   input: { backgroundColor: colors.surface, padding: 16, borderRadius: 14, ...typography.body, color: colors.text, borderWidth: 1, borderColor: colors.surfaceDark },
   communeDisplay: { ...typography.h3, color: colors.primary, marginBottom: 8 },
   summary: { backgroundColor: colors.surface, borderRadius: 14, padding: 16, gap: 10 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   summaryLabel: { ...typography.body, color: colors.textSecondary },
-  summaryValue: { ...typography.body, color: colors.text, fontWeight: '600' },
+  summaryValue: { ...typography.body, color: colors.text, fontWeight: '600', flex: 1, textAlign: 'right' },
+  summaryTypes: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1, justifyContent: 'flex-end' },
+  summaryTypeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  summaryTypeText: { ...typography.caption, fontWeight: '600' },
   infoBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.primaryLight + '15', padding: 14, borderRadius: 12, marginTop: 16 },
   infoText: { ...typography.bodySmall, color: colors.primary, flex: 1 },
   footer: { flexDirection: 'row', alignItems: 'center', paddingTop: 8 },

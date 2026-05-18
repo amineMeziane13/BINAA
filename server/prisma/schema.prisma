@@ -21,6 +21,7 @@ enum ProviderType {
 enum ProductType {
   MATERIAL
   EQUIPMENT
+  SERVICE
 }
 
 enum OrderStatus {
@@ -60,6 +61,8 @@ model Provider {
   type              ProviderType
   profession        String?
   experienceYears   Int?
+  skills            String[]     @default([])
+  photos            String[]     @default([])
   isSubscribed      Boolean      @default(false)
   subscriptionExpiry DateTime?
   rating            Float        @default(0)
@@ -77,10 +80,11 @@ model Product {
   providerId    String
   provider      Provider    @relation(fields: [providerId], references: [id], onDelete: Cascade)
   title         String
-  description   String
+  description   String      @default("")
   price         Float
-  stockQuantity Int
+  stockQuantity Int         @default(0)
   type          ProductType
+  photos        String[]    @default([])
   rating        Float       @default(0)
 
   createdAt DateTime @default(now())
@@ -98,6 +102,10 @@ model Commande {
   baseAmount        Float
   commissionRate    Float       @default(0.1)
   totalAmount       Float
+  description       String?
+  requestedProfession String?
+  requestedProductType String?
+  requestedServices String[]    @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

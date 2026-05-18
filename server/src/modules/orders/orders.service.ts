@@ -5,8 +5,8 @@ import { logger } from '../../middleware/logger.js';
 import { autoAssign } from '../assignment/assignment.engine.js';
 
 const orderInclude = {
-  client: { select: { id: true, fullName: true } },
-  assignedProvider: { include: { user: { select: { id: true, fullName: true } } } },
+  client: { select: { id: true, fullName: true, commune: true, phone: true } },
+  assignedProvider: { include: { user: { select: { id: true, fullName: true, commune: true } } } },
 };
 
 export async function list(user: AuthPayload) {
@@ -32,9 +32,12 @@ export async function list(user: AuthPayload) {
 }
 
 export async function create(user: AuthPayload, data: {
-  type: string; baseAmount: number;
+  type: string;
+  baseAmount: number;
+  description?: string;
   requestedProfession?: string;
   requestedProductType?: string;
+  requestedServices?: string[];
 }) {
   if (user.role !== 'CLIENT') {
     throw new AppError(403, 'Only clients can create orders');
@@ -57,12 +60,20 @@ export async function create(user: AuthPayload, data: {
       commissionRate,
       totalAmount,
       status: 'PENDING_ASSIGNMENT',
+      description: data.description || null,
+      requestedProfession: data.requestedProfession || null,
+      requestedProductType: data.requestedProductType || null,
+      requestedServices: data.requestedServices || [],
     },
   });
 
   logger.info('Orders', 'Order created', { orderId: order.id, clientId: user.userId, type: data.type });
 
-  const assigned = await autoAssign(order.id, data.type, data.requestedProfession, data.requestedProductType);
+  // Get client commune for intelligent matching
+  const client = await prisma.user.findUnique({ where: { id: user.userId }, select: { commune: true } });
+  const clientCommune = client?.commune;
+
+  const assigned = await autoAssign(order.id, data.type, data.requestedProfession, data.requestedProductType, clientCommune);
 
   const updated = await prisma.commande.findUnique({
     where: { id: order.id },
@@ -78,17 +89,47 @@ export async function create(user: AuthPayload, data: {
   return updated;
 }
 
-export async function pay(orderId: string, user: AuthPayload) {
-  const order = await prisma.commande.findUnique({ where: { id: orderId } });
+export async function updateStatus(orderId: string, user: AuthPayload, newStatus: string) {
+  const order = await prisma.commande.findUnique({ where: { id: orderId }, include: orderInclude });
   if (!order) throw new NotFoundError('Order');
-  if (order.clientId !== user.userId) throw new AppError(403, 'Not your order');
-  if (order.status !== 'PENDING_PAYMENT') throw new AppError(400, 'Order is not awaiting payment');
+
+  const validTransitions: Record<string, string[]> = {
+    PENDING_ASSIGNMENT: ['CANCELLED'],
+    PENDING_PAYMENT: ['PAID', 'CANCELLED'],
+    PAID: ['COMPLETED', 'CANCELLED'],
+    COMPLETED: [],
+    CANCELLED: [],
+  };
+
+  const allowed = validTransitions[order.status] || [];
+  if (!allowed.includes(newStatus)) {
+    throw new AppError(400, `Cannot transition from ${order.status} to ${newStatus}`);
+  }
+
+  // Permission checks
+  if (newStatus === 'PAID' && order.clientId !== user.userId) {
+    throw new AppError(403, 'Only the client can pay');
+  }
+  if (newStatus === 'COMPLETED') {
+    const provider = await prisma.provider.findUnique({ where: { userId: user.userId } });
+    if (!provider || provider.id !== order.assignedProviderId) {
+      // Allow client or assigned provider to complete
+      if (order.clientId !== user.userId) {
+        throw new AppError(403, 'Not authorized to complete this order');
+      }
+    }
+  }
 
   const updated = await prisma.commande.update({
     where: { id: orderId },
-    data: { status: 'PAID' },
+    data: { status: newStatus as never },
+    include: orderInclude,
   });
 
-  logger.info('Orders', 'Order paid', { orderId, clientId: user.userId });
+  logger.info('Orders', `Order status updated to ${newStatus}`, { orderId, userId: user.userId });
   return updated;
+}
+
+export async function pay(orderId: string, user: AuthPayload) {
+  return updateStatus(orderId, user, 'PAID');
 }

@@ -6,6 +6,7 @@ import Icon3D from '../core/components/Icon3D';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../features/home/screens/HomeScreen';
+import CalculatorScreen from '../features/home/screens/CalculatorScreen';
 import OrderScreen from '../features/orders/screens/OrderScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
 import MyOffersScreen from '../features/fournisseur/screens/MyOffersScreen';
@@ -79,7 +80,7 @@ export default function MainTabs() {
       <Stack.Screen name="MarketProducts" component={MarketProductsScreen} />
       <Stack.Screen name="MarketArtisans" component={MarketArtisansScreen} />
       <Stack.Screen name="MarketEquipment" component={MarketProductsScreen} />
-      <Stack.Screen name="Calculator" component={MarketProductsScreen} />
+      <Stack.Screen name="CalculatorScreen" component={CalculatorScreen} />
     </Stack.Navigator>
   );
 }

@@ -22,6 +22,15 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function getMyProducts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const products = await service.getMyProducts(req.user!.userId);
+    res.json(products);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const provider = await prisma.provider.findUnique({ where: { userId: req.user!.userId } });

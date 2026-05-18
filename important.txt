@@ -1,0 +1,7 @@
+https://vercel.com/amine-s-projects13/binaa
+
+database : 
+https://console.neon.tech/app/projects/cold-feather-73824183/branches/br-gentle-waterfall-aldvk5n3/tables?database=neondb
+
+Server:
+https://dashboard.render.com/web/srv-d84oeijbc2fs73cerjlg/deploys/dep-d84p5sjbc2fs73cfc580?r=2026-05-17%4010%3A04%3A38%7E2026-05-17%4010%3A08%3A39

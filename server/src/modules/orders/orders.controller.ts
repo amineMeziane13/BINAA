@@ -19,6 +19,15 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function updateStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const order = await service.updateStatus(req.params.id as string, req.user!, req.body.status);
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function pay(req: Request, res: Response, next: NextFunction) {
   try {
     const order = await service.pay(req.params.id as string, req.user!);

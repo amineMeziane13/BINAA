@@ -10,3 +10,6 @@
 [2026-05-16T00:42:23.982Z] [INFO] [Server] Listening on port 3000
 [2026-05-16T00:53:43.546Z] [INFO] [Server] Listening on port 3000
 [2026-05-16T10:34:49.144Z] [INFO] [Server] Listening on port 3000
+[2026-05-17T10:17:10.414Z] [INFO] [Server] Listening on port 3000
+[2026-05-17T10:17:28.094Z] [ERROR] [Global] Invalid commune. Must be one of the 26 communes of Oran. {"path":"/api/auth/register","method":"POST"}
+[2026-05-17T10:18:16.107Z] [INFO] [Auth] User registered {"userId":"0037e6f0-510d-4455-a87e-2272522cdc8c","role":"CLIENT"}

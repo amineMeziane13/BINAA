@@ -19,6 +19,15 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function getMyProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const profile = await service.getProviderByUserId(req.user!.userId);
+    res.json(profile);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateProfile(req: Request, res: Response, next: NextFunction) {
   try {
     const profile = await service.updateProfile(req.user!.userId, req.body);
@@ -31,7 +40,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
 export async function subscribe(req: Request, res: Response, next: NextFunction) {
   try {
     const provider = await service.getProviderByUserId(req.user!.userId);
-    const result = await service.subscribe(provider.id, req.body);
+    const result = await service.subscribe(provider.id, req.body || { plan: 'monthly' });
     res.json(result);
   } catch (err) {
     next(err);

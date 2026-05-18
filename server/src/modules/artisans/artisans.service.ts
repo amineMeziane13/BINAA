@@ -34,12 +34,20 @@ export async function getById(providerId: string) {
 export async function getProviderByUserId(userId: string) {
   const provider = await prisma.provider.findUnique({
     where: { userId },
+    include: {
+      user: { select: { id: true, fullName: true, phone: true, commune: true } },
+    },
   });
   if (!provider) throw new NotFoundError('Provider profile');
   return provider;
 }
 
-export async function updateProfile(userId: string, data: { profession?: string; experienceYears?: number }) {
+export async function updateProfile(userId: string, data: {
+  profession?: string;
+  experienceYears?: number;
+  skills?: string[];
+  photos?: string[];
+}) {
   const existing = await prisma.provider.findUnique({ where: { userId } });
   if (!existing) throw new NotFoundError('Provider profile');
 
@@ -48,6 +56,11 @@ export async function updateProfile(userId: string, data: { profession?: string;
     data: {
       ...(data.profession !== undefined && { profession: data.profession }),
       ...(data.experienceYears !== undefined && { experienceYears: data.experienceYears }),
+      ...(data.skills !== undefined && { skills: data.skills }),
+      ...(data.photos !== undefined && { photos: data.photos }),
+    },
+    include: {
+      user: { select: { id: true, fullName: true, phone: true, commune: true } },
     },
   });
 }
