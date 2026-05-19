@@ -113,7 +113,7 @@ export default function OrderScreen() {
           <Text style={styles.client}>Client: {item.client.fullName}</Text>
         )}
         {user?.role === 'CLIENT' && item.assignedProvider && (
-          <Text style={styles.client}>Prestataire: {item.assignedProvider.fullName}</Text>
+          <Text style={styles.client}>Prestataire: {item.assignedProvider.user?.fullName || item.assignedProvider.fullName}</Text>
         )}
       </View>
     </TouchableOpacity>

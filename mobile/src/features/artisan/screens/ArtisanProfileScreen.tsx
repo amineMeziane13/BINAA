@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput,
-  Alert, ActivityIndicator, Image, Animated
+  Alert, ActivityIndicator, Image, Animated, Platform
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../../core/api/axios';
@@ -86,7 +86,12 @@ export default function ArtisanProfileScreen() {
 
   const handleSave = async () => {
     if (!profession || !experienceYears) {
-      Alert.alert('Erreur', 'Veuillez renseigner la profession et les années d\'expérience.');
+      const msg = "Veuillez renseigner la profession et les années d'expérience.";
+      if (Platform.OS === 'web') {
+        window.alert('Erreur: ' + msg);
+      } else {
+        Alert.alert('Erreur', msg);
+      }
       return;
     }
     setSaving(true);
@@ -103,7 +108,12 @@ export default function ArtisanProfileScreen() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.error || 'Erreur');
+      const msg = err?.response?.data?.error || 'Erreur lors de l\'enregistrement';
+      if (Platform.OS === 'web') {
+        window.alert('Erreur: ' + msg);
+      } else {
+        Alert.alert('Erreur', msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -112,10 +122,20 @@ export default function ArtisanProfileScreen() {
   const handleSubscribe = async () => {
     try {
       await api.post('/artisans/subscribe');
-      Alert.alert('Succès', 'Abonnement activé ! Vous êtes maintenant visible pour les clients.');
+      const msg = 'Abonnement activé ! Vous êtes maintenant visible pour les clients.';
+      if (Platform.OS === 'web') {
+        window.alert(msg);
+      } else {
+        Alert.alert('Succès', msg);
+      }
       loadProfile();
     } catch (err: any) {
-      Alert.alert('Info', err?.response?.data?.error || 'Erreur');
+      const msg = err?.response?.data?.error || 'Erreur';
+      if (Platform.OS === 'web') {
+        window.alert('Info: ' + msg);
+      } else {
+        Alert.alert('Info', msg);
+      }
     }
   };
 

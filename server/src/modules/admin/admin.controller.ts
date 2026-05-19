@@ -31,3 +31,39 @@ export async function setCommission(req: Request, res: Response, next: NextFunct
     next(err);
   }
 }
+
+export async function listUsers(req: Request, res: Response, next: NextFunction) {
+  try {
+    const users = await service.listUsers();
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    await service.deleteUser(req.params.id as string);
+    res.json({ success: true, message: 'User deleted' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const settings = await service.listSettings();
+    res.json(settings);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateSetting(req: Request, res: Response, next: NextFunction) {
+  try {
+    const setting = await service.updateSetting(req.params.key as string, req.body.value);
+    res.json(setting);
+  } catch (err) {
+    next(err);
+  }
+}

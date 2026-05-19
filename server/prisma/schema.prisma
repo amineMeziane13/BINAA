@@ -96,7 +96,7 @@ model Commande {
   clientId          String
   client            User        @relation("clientOrders", fields: [clientId], references: [id], onDelete: Cascade)
   assignedProviderId String?
-  assignedProvider  Provider?   @relation(fields: [assignedProviderId], references: [id])
+  assignedProvider  Provider?   @relation(fields: [assignedProviderId], references: [id], onDelete: SetNull)
   type              OrderType
   status            OrderStatus @default(PENDING_ASSIGNMENT)
   baseAmount        Float

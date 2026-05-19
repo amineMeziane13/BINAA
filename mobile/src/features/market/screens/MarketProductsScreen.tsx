@@ -56,8 +56,8 @@ export default function MarketProductsScreen() {
       {item.provider && (
         <View style={styles.providerRow}>
           <Icon3D icon="👤" size={10} bgColor={colors.surfaceDark} />
-          <Text style={styles.providerName}>{item.provider.fullName}</Text>
-          <Text style={styles.providerCommune}>📍 {item.provider.commune}</Text>
+          <Text style={styles.providerName}>{item.provider.user?.fullName || item.provider.fullName}</Text>
+          <Text style={styles.providerCommune}>📍 {item.provider.user?.commune || item.provider.commune}</Text>
         </View>
       )}
     </View>

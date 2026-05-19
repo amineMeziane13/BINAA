@@ -258,7 +258,7 @@ export default function AdminDashboardScreen() {
                 </View>
                 <Text style={styles.orderAmount}>{item.totalAmount?.toLocaleString()} DZD</Text>
                 <Text style={styles.orderClient}>Client: {item.client?.fullName}</Text>
-                {item.assignedProvider && <Text style={styles.orderClient}>Assigné: {item.assignedProvider.fullName}</Text>}
+                {item.assignedProvider && <Text style={styles.orderClient}>Assigné: {item.assignedProvider.user?.fullName || item.assignedProvider.fullName}</Text>}
               </View>
             </TouchableOpacity>
           )}

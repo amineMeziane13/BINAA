@@ -9,26 +9,35 @@ const orderInclude = {
   assignedProvider: { include: { user: { select: { id: true, fullName: true, commune: true } } } },
 };
 
+function mapOrder(order: any) {
+  if (order && order.assignedProvider && order.assignedProvider.user) {
+    order.assignedProvider.fullName = order.assignedProvider.user.fullName;
+    order.assignedProvider.commune = order.assignedProvider.user.commune;
+  }
+  return order;
+}
+
 export async function list(user: AuthPayload) {
+  let orders;
   if (user.role === 'ADMIN') {
-    return prisma.commande.findMany({
+    orders = await prisma.commande.findMany({
+      include: orderInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+  } else {
+    const provider = await prisma.provider.findUnique({ where: { userId: user.userId } });
+    orders = await prisma.commande.findMany({
+      where: {
+        OR: [
+          { clientId: user.userId },
+          ...(provider ? [{ assignedProviderId: provider.id }] : []),
+        ],
+      },
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
   }
-
-  const provider = await prisma.provider.findUnique({ where: { userId: user.userId } });
-
-  return prisma.commande.findMany({
-    where: {
-      OR: [
-        { clientId: user.userId },
-        ...(provider ? [{ assignedProviderId: provider.id }] : []),
-      ],
-    },
-    include: orderInclude,
-    orderBy: { createdAt: 'desc' },
-  });
+  return orders.map(mapOrder);
 }
 
 export async function create(user: AuthPayload, data: {
@@ -86,7 +95,7 @@ export async function create(user: AuthPayload, data: {
     logger.info('Orders', 'No auto-assign found, awaiting admin', { orderId: order.id });
   }
 
-  return updated;
+  return updated ? mapOrder(updated) : null;
 }
 
 export async function updateStatus(orderId: string, user: AuthPayload, newStatus: string) {
@@ -127,7 +136,7 @@ export async function updateStatus(orderId: string, user: AuthPayload, newStatus
   });
 
   logger.info('Orders', `Order status updated to ${newStatus}`, { orderId, userId: user.userId });
-  return updated;
+  return mapOrder(updated);
 }
 
 export async function pay(orderId: string, user: AuthPayload) {

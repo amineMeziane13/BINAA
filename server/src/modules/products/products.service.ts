@@ -3,16 +3,25 @@ import { NotFoundError, AppError } from '../../shared/errors.js';
 
 const providerInclude = { provider: { include: { user: { select: { id: true, fullName: true, commune: true } } } } };
 
+function mapProduct(product: any) {
+  if (product && product.provider && product.provider.user) {
+    product.provider.fullName = product.provider.user.fullName;
+    product.provider.commune = product.provider.user.commune;
+  }
+  return product;
+}
+
 export async function list(type?: string, providerId?: string) {
   const where: any = {};
   if (type) where.type = type;
   if (providerId) where.providerId = providerId;
 
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where,
     include: providerInclude,
     orderBy: { createdAt: 'desc' },
   });
+  return products.map(mapProduct);
 }
 
 export async function getById(id: string) {
@@ -21,18 +30,19 @@ export async function getById(id: string) {
     include: providerInclude,
   });
   if (!product) throw new NotFoundError('Product');
-  return product;
+  return mapProduct(product);
 }
 
 export async function getMyProducts(userId: string) {
   const provider = await prisma.provider.findUnique({ where: { userId } });
   if (!provider) throw new NotFoundError('Provider profile');
 
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { providerId: provider.id },
     include: providerInclude,
     orderBy: { createdAt: 'desc' },
   });
+  return products.map(mapProduct);
 }
 
 export async function createProviderProduct(providerId: string, data: {

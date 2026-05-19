@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  TextInput, Alert, Image, ActivityIndicator,
+  TextInput, Alert, Image, ActivityIndicator, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../../core/api/axios';
@@ -47,7 +47,12 @@ export default function AddOfferScreen() {
 
   const handleSubmit = async () => {
     if (!type || !title || !price) {
-      Alert.alert('Erreur', 'Veuillez remplir le type, le titre et le prix.');
+      const msg = 'Veuillez remplir le type, le titre et le prix.';
+      if (Platform.OS === 'web') {
+        window.alert('Erreur: ' + msg);
+      } else {
+        Alert.alert('Erreur', msg);
+      }
       return;
     }
     setLoading(true);
@@ -60,11 +65,21 @@ export default function AddOfferScreen() {
         stockQuantity: stockQuantity ? parseInt(stockQuantity) : 0,
         photos,
       });
-      Alert.alert('✅ Succès', 'Offre créée avec succès !', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      if (Platform.OS === 'web') {
+        window.alert('Offre créée avec succès !');
+        navigation.goBack();
+      } else {
+        Alert.alert('✅ Succès', 'Offre créée avec succès !', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.error || 'Erreur lors de la création');
+      const msg = err?.response?.data?.error || 'Erreur lors de la création';
+      if (Platform.OS === 'web') {
+        window.alert('Erreur: ' + msg);
+      } else {
+        Alert.alert('Erreur', msg);
+      }
     } finally {
       setLoading(false);
     }
