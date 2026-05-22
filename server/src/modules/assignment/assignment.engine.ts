@@ -83,19 +83,21 @@ async function assignForProduct(orderId: string, requestedProductType?: string, 
 }
 
 async function assignForArtisan(orderId: string, requestedProfession?: string, clientCommune?: string): Promise<string | null> {
-  const whereProfession = requestedProfession
-    ? { profession: { contains: requestedProfession, mode: 'insensitive' as const } }
-    : {};
-
-  const providers = await prisma.provider.findMany({
+  const allProviders = await prisma.provider.findMany({
     where: {
       type: 'ARTISAN',
-      ...whereProfession,
     },
     include: {
       user: { select: { id: true, fullName: true, commune: true } },
     },
   });
+
+  const providers = requestedProfession
+    ? allProviders.filter(p => 
+        p.profession?.toLowerCase() === requestedProfession.toLowerCase() ||
+        p.professions?.some(prof => prof.toLowerCase() === requestedProfession.toLowerCase())
+      )
+    : allProviders;
 
   if (providers.length === 0) {
     logger.info('Assignment', 'No ARTISAN providers found', { orderId, requestedProfession });
@@ -135,7 +137,7 @@ async function assignForArtisan(orderId: string, requestedProfession?: string, c
     }
 
     // Exact profession match (0-10)
-    if (requestedProfession && p.profession?.toLowerCase() === requestedProfession.toLowerCase()) {
+    if (requestedProfession && (p.profession?.toLowerCase() === requestedProfession.toLowerCase() || p.professions?.some(prof => prof.toLowerCase() === requestedProfession.toLowerCase()))) {
       score += 10;
       reasons.push('exact_profession_match');
     }

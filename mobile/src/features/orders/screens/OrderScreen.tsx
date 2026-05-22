@@ -115,6 +115,10 @@ export default function OrderScreen() {
         {user?.role === 'CLIENT' && item.assignedProvider && (
           <Text style={styles.client}>Prestataire: {item.assignedProvider.user?.fullName || item.assignedProvider.fullName}</Text>
         )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, borderTopWidth: 1, borderTopColor: colors.surfaceDark, paddingTop: 10 }}>
+          <Text style={{ ...typography.caption, color: colors.primary, fontWeight: '700', flex: 1 }}>👁️ Voir les détails</Text>
+          <Text style={{ color: colors.textSecondary }}>›</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );

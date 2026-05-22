@@ -35,7 +35,7 @@ export default function ArtisanProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profession, setProfession] = useState('');
+  const [professions, setProfessions] = useState<string[]>([]);
   const [experienceYears, setExperienceYears] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -50,11 +50,12 @@ export default function ArtisanProfileScreen() {
     try {
       const { data } = await api.get('/artisans/profile/me');
       setProfile(data);
-      setProfession(data.profession || '');
+      const loadedProfessions = data.professions && data.professions.length > 0 ? data.professions : (data.profession ? [data.profession] : []);
+      setProfessions(loadedProfessions);
       setExperienceYears(String(data.experienceYears || ''));
       setSkills(data.skills || []);
       setPhotos(data.photos || []);
-      setIsNew(!data.profession);
+      setIsNew(loadedProfessions.length === 0);
     } catch {
       setIsNew(true);
     } finally {
@@ -64,6 +65,10 @@ export default function ArtisanProfileScreen() {
 
   const toggleSkill = (skill: string) => {
     setSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
+  };
+
+  const toggleProfession = (prof: string) => {
+    setProfessions(prev => prev.includes(prof) ? prev.filter(p => p !== prof) : [...prev, prof]);
   };
 
   const pickImage = async () => {
@@ -85,8 +90,8 @@ export default function ArtisanProfileScreen() {
   };
 
   const handleSave = async () => {
-    if (!profession || !experienceYears) {
-      const msg = "Veuillez renseigner la profession et les années d'expérience.";
+    if (professions.length === 0 || !experienceYears) {
+      const msg = "Veuillez renseigner au moins une profession et les années d'expérience.";
       if (Platform.OS === 'web') {
         window.alert('Erreur: ' + msg);
       } else {
@@ -97,7 +102,8 @@ export default function ArtisanProfileScreen() {
     setSaving(true);
     try {
       const payload = {
-        profession,
+        profession: professions[0] || '',
+        professions,
         experienceYears: parseInt(experienceYears),
         skills,
         photos,
@@ -175,13 +181,17 @@ export default function ArtisanProfileScreen() {
           <View style={styles.profileHeader}>
             <View style={[styles.avatarCircle, { backgroundColor: '#2563EB' }]}>
               <Text style={styles.avatarEmoji}>
-                {PROFESSIONS.find(p => p.label === profession)?.icon || '🔧'}
+                {professions.length > 0 ? (PROFESSIONS.find(p => p.label === professions[0])?.icon || '🔧') : '🔧'}
               </Text>
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{profile.user?.fullName || 'Artisan'}</Text>
-              <View style={styles.profBadge}>
-                <Text style={styles.profBadgeText}>{profession || 'Non défini'}</Text>
+              <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4}}>
+                {professions.map((prof, i) => (
+                  <View key={i} style={styles.profBadge}>
+                    <Text style={styles.profBadgeText}>{prof}</Text>
+                  </View>
+                ))}
               </View>
               <Text style={styles.expText}>
                 {experienceYears ? `${experienceYears} ans d'expérience` : ''}
@@ -254,11 +264,11 @@ export default function ArtisanProfileScreen() {
           {PROFESSIONS.map(p => (
             <TouchableOpacity
               key={p.label}
-              onPress={() => setProfession(p.label)}
-              style={[styles.profChip, profession === p.label && styles.profChipSelected]}
+              onPress={() => toggleProfession(p.label)}
+              style={[styles.profChip, professions.includes(p.label) && styles.profChipSelected]}
             >
               <Text style={styles.profChipIcon}>{p.icon}</Text>
-              <Text style={[styles.profChipText, profession === p.label && styles.profChipTextSelected]}>
+              <Text style={[styles.profChipText, professions.includes(p.label) && styles.profChipTextSelected]}>
                 {p.label}
               </Text>
             </TouchableOpacity>

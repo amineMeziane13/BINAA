@@ -44,6 +44,7 @@ export async function getProviderByUserId(userId: string) {
 
 export async function updateProfile(userId: string, data: {
   profession?: string;
+  professions?: string[];
   experienceYears?: number;
   skills?: string[];
   photos?: string[];
@@ -55,6 +56,7 @@ export async function updateProfile(userId: string, data: {
     where: { userId },
     data: {
       ...(data.profession !== undefined && { profession: data.profession }),
+      ...(data.professions !== undefined && { professions: data.professions }),
       ...(data.experienceYears !== undefined && { experienceYears: data.experienceYears }),
       ...(data.skills !== undefined && { skills: data.skills }),
       ...(data.photos !== undefined && { photos: data.photos }),

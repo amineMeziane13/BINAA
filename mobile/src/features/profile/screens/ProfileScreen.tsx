@@ -5,6 +5,7 @@ import { typography } from '../../../core/theme/typography';
 import { card3D, button3D } from '../../../core/theme/neumorphism';
 import Icon3D from '../../../core/components/Icon3D';
 import { useAuth } from '../../../core/hooks/useAuth';
+import { useNavigation } from '@react-navigation/native';
 import api from '../../../core/api/axios';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -30,6 +31,7 @@ const ROLE_ICONS: Record<string, string> = {
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const navigation = useNavigation<any>();
   const [deleting, setDeleting] = useState(false);
 
   const role = user?.role || 'CLIENT';
@@ -117,6 +119,28 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Role-specific Actions */}
+      {role === 'ARTISAN' && (
+        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ArtisanProfile')}>
+          <Icon3D icon="🔧" size={16} bgColor={colors.primary} />
+          <Text style={styles.actionBtnText}>Gérer mon profil Artisan</Text>
+        </TouchableOpacity>
+      )}
+
+      {role === 'FOURNISSEUR' && (
+        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('MyOffers')}>
+          <Icon3D icon="📦" size={16} bgColor={colors.accent} />
+          <Text style={styles.actionBtnText}>Gérer mes offres</Text>
+        </TouchableOpacity>
+      )}
+
+      {role === 'CLIENT' && (
+        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Orders')}>
+          <Icon3D icon="📋" size={16} bgColor={colors.primary} />
+          <Text style={styles.actionBtnText}>Voir mes projets</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
         <Icon3D icon="🚪" size={16} bgColor={colors.error} />
@@ -146,7 +170,9 @@ const styles = StyleSheet.create({
   infoLabel: { ...typography.caption, color: colors.textSecondary },
   infoValue: { ...typography.body, color: colors.text, fontWeight: '500', marginTop: 2 },
   separator: { height: 1, backgroundColor: colors.surfaceDark, marginHorizontal: 16 },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, backgroundColor: colors.surface, borderRadius: 14, marginHorizontal: 16, marginTop: 20, borderWidth: 1, borderColor: colors.error },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, backgroundColor: colors.surface, borderRadius: 14, marginHorizontal: 16, marginTop: 20 },
+  actionBtnText: { ...typography.button, color: colors.text },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, backgroundColor: colors.surface, borderRadius: 14, marginHorizontal: 16, marginTop: 12, borderWidth: 1, borderColor: colors.error },
   logoutText: { ...typography.button, color: colors.error },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, marginHorizontal: 16, marginTop: 12 },
   deleteText: { ...typography.bodySmall, color: colors.textSecondary, textDecorationLine: 'underline' },

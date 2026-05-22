@@ -60,6 +60,7 @@ model Provider {
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   type              ProviderType
   profession        String?
+  professions       String[]     @default([])
   experienceYears   Int?
   skills            String[]     @default([])
   photos            String[]     @default([])

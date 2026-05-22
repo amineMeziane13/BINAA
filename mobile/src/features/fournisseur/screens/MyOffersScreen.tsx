@@ -6,6 +6,7 @@ import { typography } from '../../../core/theme/typography';
 import { card3D, button3D } from '../../../core/theme/neumorphism';
 import Icon3D from '../../../core/components/Icon3D';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import OfferDetailsModal from '../components/OfferDetailsModal';
 
 const TYPE_ICONS: Record<string, string> = {
   MATERIAL: '🧱',
@@ -29,6 +30,7 @@ export default function MyOffersScreen() {
   const navigation = useNavigation<any>();
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOffer, setSelectedOffer] = useState<any>(null);
 
   const loadOffers = () => {
     setLoading(true);
@@ -61,7 +63,8 @@ export default function MyOffersScreen() {
     const hasPhotos = item.photos && item.photos.length > 0;
 
     return (
-      <View style={[styles.card, card3D()]}>
+      <TouchableOpacity activeOpacity={0.85} onPress={() => setSelectedOffer(item)}>
+        <View style={[styles.card, card3D()]}>
         {/* Photo banner */}
         {hasPhotos && (
           <View style={styles.photoBanner}>
@@ -98,7 +101,7 @@ export default function MyOffersScreen() {
             )}
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -136,6 +139,12 @@ export default function MyOffersScreen() {
           <Text style={styles.fabText}>+ Ajouter une offre</Text>
         </View>
       </TouchableOpacity>
+
+      <OfferDetailsModal
+        visible={!!selectedOffer}
+        offer={selectedOffer}
+        onClose={() => setSelectedOffer(null)}
+      />
     </View>
   );
 }
