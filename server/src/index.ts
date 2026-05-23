@@ -3,6 +3,8 @@ import cors from 'cors';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './middleware/logger.js';
+import { prisma } from './config/db.js';
+import bcrypt from 'bcryptjs';
 
 import authRoutes from './modules/auth/auth.routes.js';
 import productRoutes from './modules/products/products.routes.js';
@@ -35,6 +37,31 @@ app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 
-app.listen(env.PORT, '0.0.0.0', () => {
-  logger.info('Server', `Listening on port ${env.PORT}`);
+async function seedAdmin() {
+  const adminEmail = 'admin@binaa.dz';
+  try {
+    const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash('Algeria123456789', 12);
+      await prisma.user.create({
+        data: {
+          email: adminEmail,
+          password: hashedPassword,
+          role: 'ADMIN',
+          fullName: 'Administrateur',
+          phone: '0000000000',
+          commune: 'Oran', // Oran is a valid commune
+        }
+      });
+      logger.info('System', 'Admin user seeded');
+    }
+  } catch (error) {
+    logger.error('System', 'Failed to seed admin user', error);
+  }
+}
+
+seedAdmin().then(() => {
+  app.listen(env.PORT, '0.0.0.0', () => {
+    logger.info('Server', `Listening on port ${env.PORT}`);
+  });
 });

@@ -36,12 +36,7 @@ export default function MyOffersScreen() {
     setLoading(true);
     api.get('/products/mine')
       .then(({ data }) => setOffers(data))
-      .catch(() => {
-        // Fallback to all products if /mine fails
-        api.get('/products')
-          .then(({ data }) => setOffers(data))
-          .catch(() => {});
-      })
+      .catch(() => setOffers([]))
       .finally(() => setLoading(false));
   };
 

@@ -141,6 +141,13 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       )}
 
+      {(role === 'ARTISAN' || role === 'FOURNISSEUR') && (
+        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ProviderProfile')}>
+          <Icon3D icon="👤" size={16} bgColor={colors.accent} />
+          <Text style={styles.actionBtnText}>Voir mon profil public</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
         <Icon3D icon="🚪" size={16} bgColor={colors.error} />

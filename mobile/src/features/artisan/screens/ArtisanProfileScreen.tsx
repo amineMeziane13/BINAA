@@ -225,6 +225,14 @@ export default function ArtisanProfileScreen() {
               <Text style={styles.locationText}>{profile.user.commune}</Text>
             </View>
           )}
+
+          {/* Phone */}
+          {profile.user?.phone && (
+            <View style={styles.locationRow}>
+              <Text style={styles.locationIcon}>📞</Text>
+              <Text style={styles.locationText}>{profile.user.phone}</Text>
+            </View>
+          )}
         </View>
       )}
 

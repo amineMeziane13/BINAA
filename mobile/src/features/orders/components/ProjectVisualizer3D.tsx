@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Animated, 
 import { colors } from '../../../core/theme/colors';
 import { typography } from '../../../core/theme/typography';
 import Icon3D from '../../../core/components/Icon3D';
+import { useAuth } from '../../../core/hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,6 +29,7 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 export default function ProjectVisualizer3D({ visible, project, onClose, onPay, onComplete }: any) {
+  const { user } = useAuth();
   const scaleValue = useRef(new Animated.Value(0.8)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
   const rotateValue = useRef(new Animated.Value(0)).current;
@@ -131,6 +133,19 @@ export default function ProjectVisualizer3D({ visible, project, onClose, onPay, 
               <View style={[styles.providerPanel, { backgroundColor: '#F1F5F9', borderColor: '#E2E8F0' }]}>
                 <Text style={styles.providerLabel}>Aucun prestataire</Text>
                 <Text style={styles.providerWait}>Le moteur intelligent recherche le meilleur prestataire pour vous...</Text>
+              </View>
+            )}
+
+            {/* Client 3D Panel for Providers */}
+            {user?.role !== 'CLIENT' && project.client && (
+              <View style={[styles.providerPanel, { marginTop: 16 }]}>
+                <View style={styles.providerHeader}>
+                  <Text style={styles.providerLabel}>Client Intéressé</Text>
+                  <Icon3D icon="👤" size={12} bgColor="#3B82F6" />
+                </View>
+                <Text style={styles.providerName}>{project.client.fullName}</Text>
+                {project.client.phone && <Text style={styles.providerCommune}>📞 {project.client.phone}</Text>}
+                {project.client.commune && <Text style={styles.providerCommune}>📍 {project.client.commune}</Text>}
               </View>
             )}
 

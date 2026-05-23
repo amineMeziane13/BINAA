@@ -14,6 +14,7 @@ import AddOfferScreen from '../features/fournisseur/screens/AddOfferScreen';
 import ArtisanProfileScreen from '../features/artisan/screens/ArtisanProfileScreen';
 import MarketProductsScreen from '../features/market/screens/MarketProductsScreen';
 import MarketArtisansScreen from '../features/market/screens/MarketArtisansScreen';
+import ProviderProfileScreen from '../features/profile/screens/ProviderProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -81,6 +82,7 @@ export default function MainTabs() {
       <Stack.Screen name="MarketArtisans" component={MarketArtisansScreen} />
       <Stack.Screen name="MarketEquipment" component={MarketProductsScreen} />
       <Stack.Screen name="CalculatorScreen" component={CalculatorScreen} />
+      <Stack.Screen name="ProviderProfile" component={ProviderProfileScreen} />
     </Stack.Navigator>
   );
 }
