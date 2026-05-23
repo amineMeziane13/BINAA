@@ -12,6 +12,7 @@ router.patch('/orders/:id/assign', controller.assignOrder);
 router.put('/settings/commission', controller.setCommission);
 
 // New endpoints for admin dashboard
+router.get('/reports', controller.getReports);
 router.get('/users', controller.listUsers);
 router.delete('/users/:id', controller.deleteUser);
 router.get('/settings', controller.listSettings);

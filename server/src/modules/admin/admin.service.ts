@@ -75,3 +75,65 @@ export async function updateSetting(key: string, value: any) {
   logger.info('Admin', 'Platform setting updated', { key, value: valStr });
   return setting;
 }
+
+export async function getReports() {
+  const [users, orders, settings] = await Promise.all([
+    prisma.user.findMany({ select: { role: true } }),
+    prisma.commande.findMany({
+      select: {
+        id: true,
+        status: true,
+        totalAmount: true,
+        baseAmount: true,
+        commissionRate: true,
+        createdAt: true,
+        type: true
+      },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.platformSetting.findUnique({ where: { key: 'COMMISSION_RATE' } })
+  ]);
+
+  const commissionRate = settings ? parseFloat(settings.value) : 0.1;
+
+  const userStats = {
+    total: users.length,
+    clients: users.filter(u => u.role === 'CLIENT').length,
+    artisans: users.filter(u => u.role === 'ARTISAN').length,
+    fournisseurs: users.filter(u => u.role === 'FOURNISSEUR').length,
+  };
+
+  let totalRevenue = 0;
+  let totalCommissionEarned = 0;
+  const ordersByStatus: Record<string, number> = {};
+
+  for (const order of orders) {
+    ordersByStatus[order.status] = (ordersByStatus[order.status] || 0) + 1;
+    if (order.status === 'PAID' || order.status === 'COMPLETED') {
+      const amount = order.totalAmount || 0;
+      totalRevenue += amount;
+      
+      const commRate = order.commissionRate ?? commissionRate;
+      const base = order.baseAmount || 0;
+      // Depending on how totalAmount is calculated (base * (1 + rate)), commission = totalAmount - base
+      const commEarned = amount - base;
+      totalCommissionEarned += commEarned > 0 ? commEarned : 0;
+    }
+  }
+
+  const recentOperations = orders.slice(0, 20);
+
+  return {
+    financials: {
+      totalRevenue,
+      totalCommissionEarned,
+      currentCommissionRate: commissionRate,
+    },
+    operations: {
+      totalOrders: orders.length,
+      ordersByStatus,
+    },
+    users: userStats,
+    recentOperations
+  };
+}

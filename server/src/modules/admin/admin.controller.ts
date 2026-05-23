@@ -67,3 +67,12 @@ export async function updateSetting(req: Request, res: Response, next: NextFunct
     next(err);
   }
 }
+
+export async function getReports(req: Request, res: Response, next: NextFunction) {
+  try {
+    const reports = await service.getReports();
+    res.json(reports);
+  } catch (err) {
+    next(err);
+  }
+}

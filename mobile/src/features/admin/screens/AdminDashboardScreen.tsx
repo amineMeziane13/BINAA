@@ -30,7 +30,7 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: '#DC2626',
 };
 
-type TabKey = 'dashboard' | 'users' | 'orders';
+type TabKey = 'dashboard' | 'reports' | 'users' | 'orders';
 
 export default function AdminDashboardScreen() {
   const { logout } = useAuth();
@@ -42,6 +42,7 @@ export default function AdminDashboardScreen() {
   const [showAssign, setShowAssign] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [userFilter, setUserFilter] = useState('ALL');
+  const [reports, setReports] = useState<any>(null);
 
   useEffect(() => {
     loadAll();
@@ -50,13 +51,15 @@ export default function AdminDashboardScreen() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [usersRes, ordersRes, settingsRes] = await Promise.all([
+      const [usersRes, ordersRes, settingsRes, reportsRes] = await Promise.all([
         api.get('/admin/users'),
         api.get('/commandes'),
         api.get('/admin/settings'),
+        api.get('/admin/reports')
       ]);
       setUsers(usersRes.data);
       setOrders(ordersRes.data);
+      setReports(reportsRes.data);
       const commRate = settingsRes.data.find((s: any) => s.key === 'COMMISSION_RATE');
       if (commRate) setCommission(String(commRate.value));
     } catch {}
@@ -125,10 +128,10 @@ export default function AdminDashboardScreen() {
 
       {/* Tabs */}
       <View style={styles.tabRow}>
-        {(['dashboard', 'users', 'orders'] as TabKey[]).map(t => (
+        {(['dashboard', 'reports', 'users', 'orders'] as TabKey[]).map(t => (
           <TouchableOpacity key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabActive]}>
             <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'dashboard' ? '📊 Stats' : t === 'users' ? '👥 Utilisateurs' : '📋 Commandes'}
+              {t === 'dashboard' ? '📊 Stats' : t === 'reports' ? '📈 Rapports' : t === 'users' ? '👥 Users' : '📋 Cmds'}
             </Text>
           </TouchableOpacity>
         ))}
@@ -190,6 +193,45 @@ export default function AdminDashboardScreen() {
               </TouchableOpacity>
             </View>
           </View>
+        </ScrollView>
+      )}
+
+      {/* Reports Tab */}
+      {tab === 'reports' && reports && (
+        <ScrollView contentContainerStyle={styles.tabContent}>
+          <View style={[styles.statCard, card3D(), { width: '100%', marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' }]}>
+            <View>
+              <Text style={styles.statLabel}>Commissions Générées</Text>
+              <Text style={styles.statValue}>{reports.financials.totalCommissionEarned?.toLocaleString()} DZD</Text>
+            </View>
+            <Icon3D icon="💸" size={24} bgColor="#7C3AED" />
+          </View>
+
+          <Text style={{ ...typography.h3, color: colors.text, marginBottom: 8 }}>Répartition par statut</Text>
+          <View style={[card3D(), { padding: 16, marginBottom: 16 }]}>
+            {Object.entries(reports.operations.ordersByStatus).map(([status, count]: any) => (
+              <View key={status} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
+                <Text style={{ color: STATUS_COLORS[status] || colors.text, fontWeight: '600' }}>{STATUS_LABELS[status] || status}</Text>
+                <Text style={{ ...typography.body, color: colors.text }}>{count}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={{ ...typography.h3, color: colors.text, marginBottom: 8 }}>Opérations Récentes</Text>
+          {reports.recentOperations?.map((op: any) => (
+            <View key={op.id} style={[card3D(), { padding: 12, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+              <View>
+                <Text style={styles.orderId}>#{op.id.slice(0, 8)} - {op.type}</Text>
+                <Text style={{ ...typography.caption, color: colors.textSecondary }}>{new Date(op.createdAt).toLocaleDateString()}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ ...typography.body, fontWeight: '700', color: colors.accent }}>{op.totalAmount} DZD</Text>
+                <View style={[styles.orderStatus, { backgroundColor: (STATUS_COLORS[op.status] || '#94A3B8') + '20' }]}>
+                  <Text style={[styles.orderStatusText, { color: STATUS_COLORS[op.status] }]}>{STATUS_LABELS[op.status] || op.status}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
         </ScrollView>
       )}
 
