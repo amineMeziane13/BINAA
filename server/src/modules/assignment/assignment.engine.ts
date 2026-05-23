@@ -108,11 +108,23 @@ async function assignForArtisan(orderId: string, requestedProfession?: string, c
     },
   });
 
+  const reqProfLower = requestedProfession?.toLowerCase() || '';
+  // Simple stemming function for French BTP terms (e.g., renovateur <-> renovation -> renov)
+  const getRoot = (word: string) => word.length >= 5 ? word.substring(0, 5) : word;
+  const reqProfRoot = getRoot(reqProfLower);
+
   const providers = requestedProfession
-    ? allProviders.filter(p => 
-        p.profession?.toLowerCase() === requestedProfession.toLowerCase() ||
-        p.professions?.some(prof => prof.toLowerCase() === requestedProfession.toLowerCase())
-      )
+    ? allProviders.filter(p => {
+        const profs = [p.profession, ...(p.professions || []), ...(p.skills || [])]
+          .filter(Boolean)
+          .map(prof => prof!.toLowerCase());
+        
+        return profs.some(prof => 
+          prof.includes(reqProfLower) || 
+          reqProfLower.includes(prof) ||
+          getRoot(prof) === reqProfRoot
+        );
+      })
     : allProviders;
 
   if (providers.length === 0) {
