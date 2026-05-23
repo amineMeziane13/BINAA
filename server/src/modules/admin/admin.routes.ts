@@ -9,6 +9,7 @@ router.use(authenticate, allowRoles('ADMIN'));
 
 router.get('/providers', controller.listProviders);
 router.patch('/orders/:id/assign', controller.assignOrder);
+router.patch('/commandes/:id/cancel', controller.cancelOrder);
 router.put('/settings/commission', controller.setCommission);
 
 // New endpoints for admin dashboard

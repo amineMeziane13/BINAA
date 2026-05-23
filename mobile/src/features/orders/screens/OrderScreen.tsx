@@ -147,6 +147,7 @@ export default function OrderScreen() {
           onClose={() => setSelected(null)} 
           onPay={handlePayOrder}
           onComplete={handleCompleteOrder}
+          onCancel={handleCancelOrder}
         />
       )}
     </View>

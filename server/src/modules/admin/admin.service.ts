@@ -23,6 +23,19 @@ export async function assignOrder(orderId: string, providerId: string) {
   return updated;
 }
 
+export async function cancelOrder(orderId: string) {
+  const order = await prisma.commande.findUnique({ where: { id: orderId } });
+  if (!order) throw new NotFoundError('Order');
+
+  const updated = await prisma.commande.update({
+    where: { id: orderId },
+    data: { status: 'CANCELLED' },
+  });
+
+  logger.info('Admin', 'Order cancelled by admin', { orderId });
+  return updated;
+}
+
 export async function setCommission(rate: number) {
   if (rate < 0 || rate > 1) {
     throw new AppError(400, 'Commission rate must be between 0 and 1');
@@ -57,7 +70,31 @@ export async function deleteUser(id: string) {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw new NotFoundError('User');
 
-  await prisma.user.delete({ where: { id } });
+  // Use a transaction to cleanly remove all related records
+  await prisma.$transaction(async (tx) => {
+    // Remove reviews written by this user
+    await tx.review.deleteMany({ where: { clientId: id } });
+
+    // If user is a provider, remove reviews targeting them and their products
+    const provider = await tx.provider.findUnique({ where: { userId: id } });
+    if (provider) {
+      await tx.review.deleteMany({ where: { targetProviderId: provider.id } });
+      await tx.product.deleteMany({ where: { providerId: provider.id } });
+      // Unassign orders assigned to this provider
+      await tx.commande.updateMany({
+        where: { assignedProviderId: provider.id },
+        data: { assignedProviderId: null, status: 'PENDING_ASSIGNMENT' },
+      });
+      await tx.provider.delete({ where: { id: provider.id } });
+    }
+
+    // Delete orders placed by this user (as a client)
+    await tx.commande.deleteMany({ where: { clientId: id } });
+
+    // Finally delete the user
+    await tx.user.delete({ where: { id } });
+  });
+
   logger.info('Admin', 'User account deleted by admin', { userId: id });
 }
 

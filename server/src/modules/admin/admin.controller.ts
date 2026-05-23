@@ -23,6 +23,15 @@ export async function assignOrder(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function cancelOrder(req: Request, res: Response, next: NextFunction) {
+  try {
+    const order = await service.cancelOrder(req.params.id as string);
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function setCommission(req: Request, res: Response, next: NextFunction) {
   try {
     const setting = await service.setCommission(req.body.rate);

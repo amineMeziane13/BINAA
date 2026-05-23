@@ -89,6 +89,20 @@ export default function AdminDashboardScreen() {
     } catch {}
   };
 
+  const handleCancelOrder = (orderId: string) => {
+    Alert.alert('Annuler', 'Voulez-vous vraiment annuler cette commande ?', [
+      { text: 'Non', style: 'cancel' },
+      { text: 'Oui, annuler', style: 'destructive', onPress: async () => {
+        try {
+          await api.patch(`/admin/commandes/${orderId}/cancel`);
+          loadAll();
+        } catch (err: any) {
+          Alert.alert('Erreur', err?.response?.data?.error || 'Erreur');
+        }
+      }},
+    ]);
+  };
+
   const handleSaveCommission = async () => {
     try {
       await api.put('/admin/settings/COMMISSION_RATE', { value: parseFloat(commission) });
@@ -301,6 +315,24 @@ export default function AdminDashboardScreen() {
                 <Text style={styles.orderAmount}>{item.totalAmount?.toLocaleString()} DZD</Text>
                 <Text style={styles.orderClient}>Client: {item.client?.fullName}</Text>
                 {item.assignedProvider && <Text style={styles.orderClient}>Assigné: {item.assignedProvider.user?.fullName || item.assignedProvider.fullName}</Text>}
+                {item.status !== 'COMPLETED' && item.status !== 'CANCELLED' && (
+                  <View style={{ flexDirection: 'row', marginTop: 10, gap: 8 }}>
+                    {item.status === 'PENDING_ASSIGNMENT' && (
+                      <TouchableOpacity
+                        style={{ flex: 1, backgroundColor: colors.primary + '15', paddingVertical: 8, borderRadius: 8, alignItems: 'center' }}
+                        onPress={() => { setSelectedOrder(item); setShowAssign(true); }}
+                      >
+                        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 12 }}>Affecter</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={{ flex: 1, backgroundColor: '#EF444415', paddingVertical: 8, borderRadius: 8, alignItems: 'center' }}
+                      onPress={() => handleCancelOrder(item.id)}
+                    >
+                      <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 12 }}>Annuler</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
           )}

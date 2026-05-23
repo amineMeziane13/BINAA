@@ -28,7 +28,7 @@ const TYPE_ICONS: Record<string, string> = {
   ARTISAN_SERVICE: '👷',
 };
 
-export default function ProjectVisualizer3D({ visible, project, onClose, onPay, onComplete }: any) {
+export default function ProjectVisualizer3D({ visible, project, onClose, onPay, onComplete, onCancel }: any) {
   const { user } = useAuth();
   const scaleValue = useRef(new Animated.Value(0.8)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
@@ -159,8 +159,13 @@ export default function ProjectVisualizer3D({ visible, project, onClose, onPay, 
               </TouchableOpacity>
             )}
             {project.status === 'PAID' && onComplete && (
-              <TouchableOpacity onPress={() => onComplete(project.id)} style={[styles.actionBtn3D, { backgroundColor: '#10B981', shadowColor: '#10B981' }]}>
+              <TouchableOpacity onPress={() => onComplete(project.id)} style={[styles.actionBtn3D, { backgroundColor: '#10B981', shadowColor: '#10B981', marginTop: 10 }]}>
                 <Text style={styles.actionBtnText}>Valider la fin du projet</Text>
+              </TouchableOpacity>
+            )}
+            {project.status !== 'COMPLETED' && project.status !== 'CANCELLED' && onCancel && (
+              <TouchableOpacity onPress={() => onCancel(project.id)} style={[styles.actionBtn3D, { backgroundColor: '#EF4444', shadowColor: '#EF4444', marginTop: 10 }]}>
+                <Text style={styles.actionBtnText}>Annuler le projet</Text>
               </TouchableOpacity>
             )}
           </View>
