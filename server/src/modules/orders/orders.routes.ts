@@ -8,5 +8,6 @@ router.get('/', authenticate, controller.list);
 router.post('/', authenticate, controller.create);
 router.patch('/:id/pay', authenticate, controller.pay);
 router.patch('/:id/status', authenticate, controller.updateStatus);
-
+router.patch('/:id', authenticate, controller.update);
+router.delete('/:id', authenticate, controller.remove);
 export default router;

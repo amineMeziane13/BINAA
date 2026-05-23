@@ -9,6 +9,9 @@ interface OfferDetailsModalProps {
   visible: boolean;
   offer: any;
   onClose: () => void;
+  isOwner?: boolean;
+  onEdit?: (offer: any) => void;
+  onDelete?: (offer: any) => void;
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -29,7 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
   EQUIPMENT: 'Équipement',
 };
 
-export default function OfferDetailsModal({ visible, offer, onClose }: OfferDetailsModalProps) {
+export default function OfferDetailsModal({ visible, offer, onClose, isOwner, onEdit, onDelete }: OfferDetailsModalProps) {
   if (!offer) return null;
 
   return (
@@ -98,11 +101,27 @@ export default function OfferDetailsModal({ visible, offer, onClose }: OfferDeta
             </View>
           </ScrollView>
 
-          <TouchableOpacity style={{ marginTop: 16 }} onPress={onClose}>
-            <View style={[styles.actionBtn, button3D(colors.primary)]}>
-              <Text style={styles.actionBtnText}>Fermer</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.actionsContainer}>
+            {isOwner && (
+              <View style={styles.ownerActions}>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => onEdit && onEdit(offer)}>
+                  <View style={[styles.actionBtn, button3D('#3B82F6')]}>
+                    <Text style={styles.actionBtnText}>✏️ Modifier</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => onDelete && onDelete(offer)}>
+                  <View style={[styles.actionBtn, button3D('#EF4444')]}>
+                    <Text style={styles.actionBtnText}>🗑️ Supprimer</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            )}
+            <TouchableOpacity style={{ marginTop: isOwner ? 12 : 16 }} onPress={onClose}>
+              <View style={[styles.actionBtn, button3D(isOwner ? colors.surfaceDark : colors.primary)]}>
+                <Text style={[styles.actionBtnText, isOwner && { color: colors.text }]}>Fermer</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -129,6 +148,8 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.surfaceDark, marginVertical: 8 },
   descContainer: { paddingVertical: 8 },
   description: { ...typography.body, color: colors.text, marginTop: 8, lineHeight: 22 },
+  actionsContainer: { marginTop: 16 },
+  ownerActions: { flexDirection: 'row', gap: 12 },
   actionBtn: { paddingVertical: 16, alignItems: 'center', borderRadius: 14 },
   actionBtnText: { ...typography.button, color: colors.textLight },
 });

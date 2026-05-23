@@ -28,7 +28,7 @@ const TYPE_ICONS: Record<string, string> = {
   ARTISAN_SERVICE: '👷',
 };
 
-export default function ProjectVisualizer3D({ visible, project, onClose, onPay, onComplete, onCancel }: any) {
+export default function ProjectVisualizer3D({ visible, project, onClose, onPay, onComplete, onCancel, onEdit, onDelete }: any) {
   const { user } = useAuth();
   const scaleValue = useRef(new Animated.Value(0.8)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
@@ -153,6 +153,16 @@ export default function ProjectVisualizer3D({ visible, project, onClose, onPay, 
 
           {/* Action Footer */}
           <View style={styles.footer}>
+            {user?.role === 'CLIENT' && project.status === 'PENDING_ASSIGNMENT' && onEdit && (
+              <TouchableOpacity onPress={() => onEdit(project)} style={[styles.actionBtn3D, { backgroundColor: '#3B82F6', shadowColor: '#3B82F6', marginBottom: 10 }]}>
+                <Text style={styles.actionBtnText}>✏️ Modifier le projet</Text>
+              </TouchableOpacity>
+            )}
+            {user?.role === 'CLIENT' && project.status === 'PENDING_ASSIGNMENT' && onDelete && (
+              <TouchableOpacity onPress={() => onDelete(project.id)} style={[styles.actionBtn3D, { backgroundColor: '#EF4444', shadowColor: '#EF4444', marginBottom: 10 }]}>
+                <Text style={styles.actionBtnText}>🗑️ Supprimer le projet</Text>
+              </TouchableOpacity>
+            )}
             {project.status === 'PENDING_PAYMENT' && onPay && (
               <TouchableOpacity onPress={() => onPay(project.id)} style={[styles.actionBtn3D, { backgroundColor: '#3B82F6', shadowColor: '#3B82F6' }]}>
                 <Text style={styles.actionBtnText}>Procéder au Paiement</Text>

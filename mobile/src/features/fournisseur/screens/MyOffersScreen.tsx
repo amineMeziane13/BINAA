@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Image, Alert } from 'react-native';
 import api from '../../../core/api/axios';
 import { colors } from '../../../core/theme/colors';
 import { typography } from '../../../core/theme/typography';
@@ -45,6 +45,36 @@ export default function MyOffersScreen() {
       loadOffers();
     }, [])
   );
+
+  const handleEdit = (offer: any) => {
+    setSelectedOffer(null);
+    navigation.navigate('EditOffer', { offer });
+  };
+
+  const handleDelete = (offer: any) => {
+    Alert.alert(
+      'Supprimer l\'offre',
+      'Êtes-vous sûr de vouloir supprimer cette offre ? Cette action est irréversible.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { 
+          text: 'Supprimer', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await api.delete(`/products/${offer.id}`);
+              setSelectedOffer(null);
+              loadOffers();
+            } catch (err) {
+              Alert.alert('Erreur', 'Impossible de supprimer l\'offre');
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -139,6 +169,9 @@ export default function MyOffersScreen() {
         visible={!!selectedOffer}
         offer={selectedOffer}
         onClose={() => setSelectedOffer(null)}
+        isOwner={true}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </View>
   );

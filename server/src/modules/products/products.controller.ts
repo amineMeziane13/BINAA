@@ -49,3 +49,29 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+export async function update(req: Request, res: Response, next: NextFunction) {
+  try {
+    const provider = await prisma.provider.findUnique({ where: { userId: req.user!.userId } });
+    if (!provider) {
+      throw new AppError(403, 'Only providers can update products');
+    }
+    const product = await service.updateProduct(req.params.id as string, provider.id, req.body);
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function remove(req: Request, res: Response, next: NextFunction) {
+  try {
+    const provider = await prisma.provider.findUnique({ where: { userId: req.user!.userId } });
+    if (!provider) {
+      throw new AppError(403, 'Only providers can delete products');
+    }
+    await service.deleteProduct(req.params.id as string, provider.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}

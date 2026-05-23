@@ -1,5 +1,6 @@
 import { prisma } from '../../config/db.js';
 import { NotFoundError, AppError } from '../../shared/errors.js';
+import { extractKeywords } from '../../shared/keywords.js';
 
 const providerInclude = { provider: { include: { user: { select: { id: true, fullName: true, commune: true } } } } };
 
@@ -61,7 +62,52 @@ export async function createProviderProduct(providerId: string, data: {
       type: data.type as never,
       photos: data.photos || [],
       providerId,
+      keywords: extractKeywords(`${data.title} ${data.description || ''}`),
     },
     include: providerInclude,
+  });
+}
+
+export async function updateProduct(id: string, providerId: string, data: {
+  title?: string; description?: string; price?: number;
+  stockQuantity?: number; type?: string; photos?: string[];
+}) {
+  const existingProduct = await prisma.product.findFirst({
+    where: { id, providerId },
+  });
+
+  if (!existingProduct) {
+    throw new NotFoundError('Product');
+  }
+
+  const newTitle = data.title ?? existingProduct.title;
+  const newDescription = data.description ?? existingProduct.description;
+
+  return prisma.product.update({
+    where: { id },
+    data: {
+      title: data.title,
+      description: data.description,
+      price: data.price,
+      stockQuantity: data.stockQuantity,
+      type: data.type as never,
+      photos: data.photos,
+      keywords: extractKeywords(`${newTitle} ${newDescription}`),
+    },
+    include: providerInclude,
+  });
+}
+
+export async function deleteProduct(id: string, providerId: string) {
+  const existingProduct = await prisma.product.findFirst({
+    where: { id, providerId },
+  });
+
+  if (!existingProduct) {
+    throw new NotFoundError('Product');
+  }
+
+  return prisma.product.delete({
+    where: { id },
   });
 }

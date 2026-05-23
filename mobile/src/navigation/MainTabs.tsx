@@ -11,7 +11,9 @@ import OrderScreen from '../features/orders/screens/OrderScreen';
 import ProfileScreen from '../features/profile/screens/ProfileScreen';
 import MyOffersScreen from '../features/fournisseur/screens/MyOffersScreen';
 import AddOfferScreen from '../features/fournisseur/screens/AddOfferScreen';
+import EditOfferScreen from '../features/fournisseur/screens/EditOfferScreen';
 import ArtisanProfileScreen from '../features/artisan/screens/ArtisanProfileScreen';
+import EditOrderScreen from '../features/orders/screens/EditOrderScreen';
 import MarketProductsScreen from '../features/market/screens/MarketProductsScreen';
 import MarketArtisansScreen from '../features/market/screens/MarketArtisansScreen';
 import ProviderProfileScreen from '../features/profile/screens/ProviderProfileScreen';
@@ -77,6 +79,8 @@ export default function MainTabs() {
       <Stack.Screen name="MainTabs" component={HomeTabs} />
       <Stack.Screen name="MyOffers" component={MyOffersScreen} />
       <Stack.Screen name="AddOffer" component={AddOfferScreen} />
+      <Stack.Screen name="EditOffer" component={EditOfferScreen} />
+      <Stack.Screen name="EditOrder" component={EditOrderScreen} />
       <Stack.Screen name="ArtisanProfile" component={ArtisanProfileScreen} />
       <Stack.Screen name="MarketProducts" component={MarketProductsScreen} />
       <Stack.Screen name="MarketArtisans" component={MarketArtisansScreen} />

@@ -87,6 +87,7 @@ model Product {
   type          ProductType
   photos        String[]    @default([])
   rating        Float       @default(0)
+  keywords      String[]    @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -107,6 +108,7 @@ model Commande {
   requestedProfession String?
   requestedProductType String?
   requestedServices String[]    @default([])
+  keywords          String[]    @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -14,16 +14,19 @@ export async function autoAssign(
   requestedProductType?: string,
   clientCommune?: string
 ): Promise<string | null> {
+  const order = await prisma.commande.findUnique({ where: { id: orderId }, select: { keywords: true } });
+  const orderKeywords = order?.keywords || [];
+
   if (type === 'PRODUCT') {
-    return assignForProduct(orderId, requestedProductType, clientCommune);
+    return assignForProduct(orderId, requestedProductType, clientCommune, orderKeywords);
   }
   if (type === 'ARTISAN_SERVICE') {
-    return assignForArtisan(orderId, requestedProfession, clientCommune);
+    return assignForArtisan(orderId, requestedProfession, clientCommune, orderKeywords);
   }
   return null;
 }
 
-async function assignForProduct(orderId: string, requestedProductType?: string, clientCommune?: string): Promise<string | null> {
+async function assignForProduct(orderId: string, requestedProductType?: string, clientCommune?: string, orderKeywords: string[] = []): Promise<string | null> {
   const providers = await prisma.provider.findMany({
     where: { type: 'FOURNISSEUR' },
     include: {
@@ -76,13 +79,26 @@ async function assignForProduct(orderId: string, requestedProductType?: string, 
       }
     }
 
-    return { providerId: p.id, score: Math.min(score, 110), reasons };
+    // Keyword matching score (0-20)
+    let keywordMatches = 0;
+    if (orderKeywords.length > 0) {
+      p.products.forEach(pr => {
+        pr.keywords.forEach(kw => {
+          if (orderKeywords.includes(kw)) keywordMatches++;
+        });
+      });
+      const kwScore = Math.min(keywordMatches * 5, 20);
+      score += kwScore;
+      if (kwScore > 0) reasons.push(`keyword_match:${keywordMatches}`);
+    }
+
+    return { providerId: p.id, score: Math.min(score, 130), reasons };
   });
 
   return applyBestMatch(orderId, scored);
 }
 
-async function assignForArtisan(orderId: string, requestedProfession?: string, clientCommune?: string): Promise<string | null> {
+async function assignForArtisan(orderId: string, requestedProfession?: string, clientCommune?: string, orderKeywords: string[] = []): Promise<string | null> {
   const allProviders = await prisma.provider.findMany({
     where: {
       type: 'ARTISAN',
@@ -153,7 +169,25 @@ async function assignForArtisan(orderId: string, requestedProfession?: string, c
       }
     }
 
-    return { providerId: p.id, score: Math.min(score, 120), reasons };
+    // Keyword matching score (0-20)
+    let keywordMatches = 0;
+    if (orderKeywords.length > 0) {
+      const providerKeywords = new Set([
+        ...(p.skills || []),
+        p.profession || '',
+        ...(p.professions || [])
+      ].filter(Boolean).map(s => s.toLowerCase().trim()));
+
+      orderKeywords.forEach(kw => {
+        if (Array.from(providerKeywords).some(pkw => pkw.includes(kw))) keywordMatches++;
+      });
+
+      const kwScore = Math.min(keywordMatches * 5, 20);
+      score += kwScore;
+      if (kwScore > 0) reasons.push(`keyword_match:${keywordMatches}`);
+    }
+
+    return { providerId: p.id, score: Math.min(score, 140), reasons };
   });
 
   return applyBestMatch(orderId, scored);

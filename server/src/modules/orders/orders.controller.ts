@@ -36,3 +36,21 @@ export async function pay(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+export async function update(req: Request, res: Response, next: NextFunction) {
+  try {
+    const order = await service.updateOrder(req.params.id as string, req.user!, req.body);
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function remove(req: Request, res: Response, next: NextFunction) {
+  try {
+    await service.deleteOrder(req.params.id as string, req.user!);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}

@@ -3,6 +3,7 @@ import { AppError, NotFoundError } from '../../shared/errors.js';
 import { AuthPayload } from '../../middleware/auth.js';
 import { logger } from '../../middleware/logger.js';
 import { autoAssign } from '../assignment/assignment.engine.js';
+import { extractKeywords } from '../../shared/keywords.js';
 
 const orderInclude = {
   client: { select: { id: true, fullName: true, commune: true, phone: true } },
@@ -73,6 +74,7 @@ export async function create(user: AuthPayload, data: {
       requestedProfession: data.requestedProfession || null,
       requestedProductType: data.requestedProductType || null,
       requestedServices: data.requestedServices || [],
+      keywords: extractKeywords(`${data.description || ''} ${data.requestedProfession || ''} ${data.requestedServices?.join(' ') || ''}`),
     },
   });
 
@@ -141,4 +143,51 @@ export async function updateStatus(orderId: string, user: AuthPayload, newStatus
 
 export async function pay(orderId: string, user: AuthPayload) {
   return updateStatus(orderId, user, 'PAID');
+}
+
+export async function updateOrder(orderId: string, user: AuthPayload, data: {
+  description?: string;
+  requestedProfession?: string;
+  requestedProductType?: string;
+  requestedServices?: string[];
+}) {
+  const order = await prisma.commande.findUnique({ where: { id: orderId } });
+  if (!order) throw new NotFoundError('Order');
+  
+  if (order.clientId !== user.userId) {
+    throw new AppError(403, 'Only the client who created the order can update it');
+  }
+
+  // Calculate new keywords
+  const newDescription = data.description ?? order.description ?? '';
+  const newProfession = data.requestedProfession ?? order.requestedProfession ?? '';
+  const newServices = data.requestedServices ?? order.requestedServices;
+  const keywordsText = `${newDescription} ${newProfession} ${newServices.join(' ')}`;
+
+  const updated = await prisma.commande.update({
+    where: { id: orderId },
+    data: {
+      description: data.description,
+      requestedProfession: data.requestedProfession,
+      requestedProductType: data.requestedProductType,
+      requestedServices: data.requestedServices,
+      keywords: extractKeywords(keywordsText),
+    },
+    include: orderInclude,
+  });
+
+  return mapOrder(updated);
+}
+
+export async function deleteOrder(orderId: string, user: AuthPayload) {
+  const order = await prisma.commande.findUnique({ where: { id: orderId } });
+  if (!order) throw new NotFoundError('Order');
+  
+  if (order.clientId !== user.userId) {
+    throw new AppError(403, 'Only the client who created the order can delete it');
+  }
+
+  return prisma.commande.delete({
+    where: { id: orderId },
+  });
 }

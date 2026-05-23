@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, ScrollView, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import api from '../../../core/api/axios';
 import { colors } from '../../../core/theme/colors';
 import { typography } from '../../../core/theme/typography';
@@ -32,6 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function OrderScreen() {
+  const navigation = useNavigation<any>();
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +83,26 @@ export default function OrderScreen() {
           loadOrders();
         } catch (err: any) {
           Alert.alert('Erreur', err?.response?.data?.error || 'Erreur');
+        }
+      }},
+    ]);
+  };
+
+  const handleEditOrder = (project: any) => {
+    setSelected(null);
+    navigation.navigate('EditOrder', { order: project });
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    Alert.alert('Supprimer', 'Voulez-vous vraiment supprimer ce projet définitivement ?', [
+      { text: 'Non', style: 'cancel' },
+      { text: 'Oui, supprimer', style: 'destructive', onPress: async () => {
+        try {
+          await api.delete(`/commandes/${orderId}`);
+          setSelected(null);
+          loadOrders();
+        } catch (err: any) {
+          Alert.alert('Erreur', err?.response?.data?.error || 'Erreur lors de la suppression');
         }
       }},
     ]);
@@ -148,6 +169,8 @@ export default function OrderScreen() {
           onPay={handlePayOrder}
           onComplete={handleCompleteOrder}
           onCancel={handleCancelOrder}
+          onEdit={handleEditOrder}
+          onDelete={handleDeleteOrder}
         />
       )}
     </View>

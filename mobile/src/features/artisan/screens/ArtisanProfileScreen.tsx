@@ -39,6 +39,8 @@ export default function ArtisanProfileScreen() {
   const [experienceYears, setExperienceYears] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [phone, setPhone] = useState('');
+  const [commune, setCommune] = useState('');
   const [isNew, setIsNew] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -55,6 +57,8 @@ export default function ArtisanProfileScreen() {
       setExperienceYears(String(data.experienceYears || ''));
       setSkills(data.skills || []);
       setPhotos(data.photos || []);
+      setPhone(data.user?.phone || '');
+      setCommune(data.user?.commune || '');
       setIsNew(loadedProfessions.length === 0);
     } catch {
       setIsNew(true);
@@ -107,6 +111,8 @@ export default function ArtisanProfileScreen() {
         experienceYears: parseInt(experienceYears),
         skills,
         photos,
+        phone,
+        commune,
       };
       const { data } = await api.put('/artisans/profile', payload);
       setProfile(data);
@@ -175,7 +181,7 @@ export default function ArtisanProfileScreen() {
         </View>
       )}
 
-      {/* Profile Card Preview - shown after save */}
+      {/* Profile Card Preview */}
       {!isNew && profile && (
         <View style={[styles.profileCard, card3D()]}>
           <View style={styles.profileHeader}>
@@ -219,22 +225,49 @@ export default function ArtisanProfileScreen() {
           )}
 
           {/* Location */}
-          {profile.user?.commune && (
-            <View style={styles.locationRow}>
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.locationText}>{profile.user.commune}</Text>
-            </View>
-          )}
+          <View style={styles.locationRow}>
+            <Text style={styles.locationIcon}>📍</Text>
+            <Text style={styles.locationText}>{commune || profile.user?.commune || '—'}</Text>
+          </View>
 
           {/* Phone */}
-          {profile.user?.phone && (
-            <View style={styles.locationRow}>
-              <Text style={styles.locationIcon}>📞</Text>
-              <Text style={styles.locationText}>{profile.user.phone}</Text>
-            </View>
-          )}
+          <View style={styles.locationRow}>
+            <Text style={styles.locationIcon}>📞</Text>
+            <Text style={styles.locationText}>{phone || profile.user?.phone || '—'}</Text>
+          </View>
         </View>
       )}
+
+      {/* Contact Info — always shown */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionIcon}>📞</Text>
+          <Text style={styles.label}>Coordonnées</Text>
+        </View>
+        <View style={styles.contactCard}>
+          <View style={styles.contactRow}>
+            <Text style={styles.contactLabel}>📱 Téléphone</Text>
+            <TextInput
+              style={styles.contactInput}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Ex: 0555 00 00 00"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="phone-pad"
+            />
+          </View>
+          <View style={[styles.contactRow, { marginTop: 12 }]}>
+            <Text style={styles.contactLabel}>📍 Commune</Text>
+            <TextInput
+              style={styles.contactInput}
+              value={commune}
+              onChangeText={setCommune}
+              placeholder="Ex: Alger Centre"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+        </View>
+      </View>
 
       {/* Subscription Status */}
       {!isNew && (
@@ -432,6 +465,18 @@ const styles = StyleSheet.create({
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 4 },
   locationIcon: { fontSize: 14 },
   locationText: { ...typography.bodySmall, color: colors.textSecondary },
+  contactCard: {
+    backgroundColor: colors.surface, borderRadius: 14,
+    padding: 16, borderWidth: 1, borderColor: colors.surfaceDark,
+  },
+  contactRow: { gap: 6 },
+  contactLabel: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600', marginBottom: 4 },
+  contactInput: {
+    backgroundColor: colors.background, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10,
+    ...typography.body, color: colors.text,
+    borderWidth: 1, borderColor: colors.surfaceDark,
+  },
 
   // Subscription
   subCard: { flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 16 },

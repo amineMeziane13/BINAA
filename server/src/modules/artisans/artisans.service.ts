@@ -48,6 +48,8 @@ export async function updateProfile(userId: string, data: {
   experienceYears?: number;
   skills?: string[];
   photos?: string[];
+  phone?: string;
+  commune?: string;
 }) {
   const existing = await prisma.provider.findUnique({ where: { userId } });
   if (!existing) throw new NotFoundError('Provider profile');
@@ -60,6 +62,14 @@ export async function updateProfile(userId: string, data: {
       ...(data.experienceYears !== undefined && { experienceYears: data.experienceYears }),
       ...(data.skills !== undefined && { skills: data.skills }),
       ...(data.photos !== undefined && { photos: data.photos }),
+      ...((data.phone !== undefined || data.commune !== undefined) && {
+        user: {
+          update: {
+            ...(data.phone !== undefined && { phone: data.phone }),
+            ...(data.commune !== undefined && { commune: data.commune }),
+          },
+        },
+      }),
     },
     include: {
       user: { select: { id: true, fullName: true, phone: true, commune: true } },
