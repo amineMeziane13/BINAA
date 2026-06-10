@@ -3,6 +3,9 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Sphere, PointLight, MeshDistortMaterial } from '@react-three/drei';
 import * as CANNON from 'cannon-es';
 import { Vector3 } from 'three';
+import { useAudio } from '../hooks/useAudio';
+import { useParticleEffects } from '../hooks/useParticleEffects';
+import { useGameEffects } from '../hooks/useGameEffects';
 
 interface GameState {
   score: number;
@@ -21,6 +24,12 @@ function Game3D({ onScoreChange, onHit }: { onScoreChange: (score: number) => vo
   const worldRef = useRef<CANNON.World | null>(null);
   const sphereBodyRef = useRef<CANNON.Body | null>(null);
   const arrowRef = useRef<any>(null);
+  const lastHitTime = useRef<number>(0);
+
+  // Custom hooks
+  const { playSound } = useAudio();
+  const { createHitEffect, createFireTrail } = useParticleEffects();
+  const { triggerHitEffect, triggerShootEffect } = useGameEffects();
 
   // Initialize physics world
   useEffect(() => {
@@ -75,9 +84,12 @@ function Game3D({ onScoreChange, onHit }: { onScoreChange: (score: number) => vo
   const handleShoot = () => {
     if (!arrowRef.current) return;
     
-    // Create arrow effect
-    setGameState(prev => ({ ...prev, isPlaying: true }));
-    onHit();
+    // Play shoot sound
+    playSound('shoot');
+    triggerShootEffect();
+    
+    // Create fire trail effect
+    createFireTrail({ x: 0, y: 0, z: -5 });
     
     // Check collision
     const distance = Math.sqrt(
@@ -88,22 +100,25 @@ function Game3D({ onScoreChange, onHit }: { onScoreChange: (score: number) => vo
     
     if (distance < 3) {
       // Hit detected
-      const newScore = gameState.score + 1;
-      setGameState(prev => ({
-        ...prev,
-        score: newScore,
-        sphereColor: `#${Math.floor(Math.random()*16777215).toString(16)}`
-      }));
-      onScoreChange(newScore);
-      
-      // Trigger visual effects
-      triggerHitEffect();
+      const now = Date.now();
+      if (now - lastHitTime.current > 500) { // Prevent rapid multiple hits
+        const newScore = gameState.score + 1;
+        setGameState(prev => ({
+          ...prev,
+          score: newScore,
+          sphereColor: `#${Math.floor(Math.random()*16777215).toString(16)}`
+        }));
+        onScoreChange(newScore);
+        onHit();
+        
+        // Trigger visual and audio effects
+        triggerHitEffect();
+        playSound('hit');
+        createHitEffect({ x: 0, y: 0, z: 2 });
+        
+        lastHitTime.current = now;
+      }
     }
-  };
-
-  const triggerHitEffect = () => {
-    // Create impact particles/visuals
-    console.log('Hit effect triggered!');
   };
 
   return (

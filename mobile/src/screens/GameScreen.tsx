@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated } from 'react-native';
 import Game3D from '../components/Game3D';
 import { colors } from '../core/theme/colors';
+import { useGameEffects } from '../hooks/useGameEffects';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,13 +16,16 @@ export default function GameScreen({ onBack }: GameScreenProps) {
   const [aimPosition, setAimPosition] = useState({ x: 0, y: 0 });
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
+  // Game effects
+  const { screenShake, screenFlash, triggerHitEffect, triggerShootEffect } = useGameEffects();
+
   const handleScoreChange = (newScore: number) => {
     setScore(newScore);
   };
 
   const handleHit = () => {
-    // Trigger haptic feedback if available
-    console.log('Hit detected!');
+    // Trigger visual effects
+    triggerHitEffect();
   };
 
   const handleTouchStart = (event: any) => {
@@ -31,6 +35,7 @@ export default function GameScreen({ onBack }: GameScreenProps) {
       y: touch.pageY - height / 2
     };
     setIsGameActive(true);
+    triggerShootEffect();
   };
 
   const handleTouchMove = (event: any) => {
@@ -52,59 +57,66 @@ export default function GameScreen({ onBack }: GameScreenProps) {
     
     // Shoot arrow
     if (isGameActive) {
-      // In a real implementation, this would trigger the arrow shot
       console.log('Shooting arrow at angle:', aimPosition);
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>3D Physics Arena</Text>
-        <View style={styles.scoreContainer}>
-          <Text style={styles.scoreText}>Score: {score}</Text>
+      {/* Screen shake effect */}
+      <Animated.View 
+        style={[styles.container, { transform: [{ translateX: screenShake }] }]}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>3D Physics Arena</Text>
+          <View style={styles.scoreContainer}>
+            <Text style={styles.scoreText}>Score: {score}</Text>
+          </View>
         </View>
-      </View>
 
-      {/* 3D Game Area */}
-      <View style={styles.gameArea}>
-        <Game3D onScoreChange={handleScoreChange} onHit={handleHit} />
-        
-        {/* Crosshair/aim indicator */}
-        <View 
-          style={[
-            styles.aimIndicator,
-            {
-              left: aimPosition.x * 50 + width / 2 - 10,
-              top: aimPosition.y * 50 + height / 2 - 10,
+        {/* 3D Game Area */}
+        <View style={styles.gameArea}>
+          <Game3D onScoreChange={handleScoreChange} onHit={handleHit} />
+          
+          {/* Crosshair/aim indicator */}
+          <View 
+            style={[
+              styles.aimIndicator,
+              {
+                left: aimPosition.x * 50 + width / 2 - 10,
+                top: aimPosition.y * 50 + height / 2 - 10,
+              }
+            ]}
+          />
+        </View>
+
+        {/* Flash effect overlay */}
+        {screenFlash && <View style={styles.flashOverlay} />}
+
+        {/* Controls */}
+        <View style={styles.controls}>
+          <Text style={styles.instructionText}>
+            {isGameActive 
+              ? "Release to shoot the fire arrow!" 
+              : "Drag to aim, then release to shoot!"
             }
-          ]}
-        />
-      </View>
-
-      {/* Controls */}
-      <View style={styles.controls}>
-        <Text style={styles.instructionText}>
-          {isGameActive 
-            ? "Release to shoot the fire arrow!" 
-            : "Drag to aim, then release to shoot!"
-          }
-        </Text>
-        <TouchableOpacity 
-          style={styles.shootButton}
-          onPressIn={handleTouchStart}
-          onPressOut={handleTouchEnd}
-          onResponderGrant={handleTouchStart}
-          onResponderRelease={handleTouchEnd}
-          onResponderMove={handleTouchMove}
-        >
-          <Text style={styles.shootText}>🔥 SHOOT</Text>
-        </TouchableOpacity>
-      </View>
+          </Text>
+          <TouchableOpacity 
+            style={styles.shootButton}
+            onPressIn={handleTouchStart}
+            onPressOut={handleTouchEnd}
+            onResponderGrant={handleTouchStart}
+            onResponderRelease={handleTouchEnd}
+            onResponderMove={handleTouchMove}
+          >
+            <Text style={styles.shootText}>🔥 SHOOT</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -191,5 +203,15 @@ const styles = StyleSheet.create({
     color: colors.textLight,
     fontSize: 20,
     fontWeight: '700',
+  },
+  flashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    zIndex: 100,
+    animation: 'flash 0.2s',
   },
 });
